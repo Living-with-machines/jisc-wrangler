@@ -23,7 +23,9 @@ def main():
     try:
         # Prepare for execution.
         args = parse_args()
-        setup(args)
+        initialise(args)
+
+        num_existing_output_files = count_all_files(args.output_dir, "output")
 
         # TODO FROM HERE.
         logging.warning("WRANGLING NOT YET IMPLEMENTED")
@@ -34,11 +36,29 @@ def main():
         exit()
 
 
+def list_all_files(dir):
+    """List all of all files under a given directory, recursively.
+
+    Returns: a list of strings.
+    """
+
+    return [str(f) for f in Path(dir).rglob('*') if os.path.isfile(f)]
+
+
+def count_all_files(dir, description=None):
+    """Count the total number of files under a given directory."""
+
+    ret = len(list_all_files(dir))
+    if not description:
+        description = str(dir)
+    logging.info(f"Counted {ret} files under the {description} directory.")
+    return ret
+
+
 def parse_args():
     """Parse arguments from the command line
 
-    Returns:
-        args (Namespace object): The arguments parsed from the command line
+    Returns: a Namespace object containing parsed command line arguments.
     """
     parser = argparse.ArgumentParser(
         description="Restructure mangled & duplicated JISC newspaper XML files"
@@ -76,18 +96,19 @@ def parse_args():
     return parser.parse_args()
 
 
-def setup(args):
+def initialise(args):
     """
     Set up working directories and logging.
-
-    Returns:
-        params (NamedTuple): Tuple of runtime parameters
     """
 
     print("This is JISC Wrangler")
 
     setup_directories(args)
     setup_logging(args)
+
+    logging.info(f"Input directory: {args.input_dir}")
+    logging.info(f"Output directory: {args.output_dir}")
+    logging.info(f"Working directory: {args.working_dir}")
 
 
 def setup_directories(args):
@@ -99,12 +120,9 @@ def setup_directories(args):
     if not os.path.exists(args.input_dir):
         raise ValueError("Please provide a valid input directory")
 
-    print(f"Input directory:\n{args.input_dir}")
-
     # Prepare the output directory.
     if not os.path.exists(args.output_dir):
         Path(args.output_dir).mkdir(parents=True, exist_ok=True)
-        print(f"Created output directory at:\n{args.output_dir}")
 
     # Create a timestamped working subdirectory.
     working_subdir = \
@@ -114,7 +132,6 @@ def setup_directories(args):
         Path(working_dir).mkdir(parents=True, exist_ok=True)
         # Set the working_dir argument to the timestamped subdirectory.
         args.working_dir = working_dir
-        print(f"Created working directory at:\n{working_dir}")
 
 
 def setup_logging(args):
@@ -135,7 +152,7 @@ def setup_logging(args):
     if args.dry_run:
         logging.info("Executing a DRY RUN. No files will be copied.")
 
-    print(f"Logging to:\n{log_full_path}")
+    print(f"Logging into the working directory at:\n{log_full_path}")
 
 
 if __name__ == "__main__":

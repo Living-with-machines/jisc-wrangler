@@ -1,5 +1,5 @@
 # jisc-wrangler
-Tool for restructuring data in the JISC 19th Century British Library Newspaper collection
+A command line tool for restructuring data in the JISC 19th Century British Library Newspaper collection.
 
 :construction: This tool is under construction :construction:
 
