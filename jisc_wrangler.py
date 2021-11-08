@@ -56,6 +56,9 @@ def main():
         all_stubs = extract_file_path_stubs(
             all_files, args.working_dir, sorted=True)
 
+        # Get a sorted list of *unique* file path stubs.
+        unique_stubs = remove_duplicate_stubs(all_stubs, sorted=True)
+
         # TODO FROM HERE.
         logging.warning("WRANGLING NOT YET IMPLEMENTED")
 
@@ -109,6 +112,16 @@ def extract_pattern_stubs(pattern, paths):
     logging.info(
         f"Found {len(ret)} files matching the {pattern.pattern} pattern.")
     return ret
+
+
+def remove_duplicate_stubs(stubs, sorted=False):
+
+    unique_stubs = list(set(stubs))
+    logging.info(f"Found {len(unique_stubs)} unique file path stubs.")
+
+    if sorted:
+        unique_stubs.sort()
+    return unique_stubs
 
 
 ##
