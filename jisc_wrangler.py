@@ -11,6 +11,8 @@ import argparse
 from pathlib import Path
 from datetime import datetime
 from re import compile, IGNORECASE
+from tqdm import tqdm  # type: ignore
+
 __version__ = '0.0.1'
 
 # Regex patterns for INPUT DIRECTORIES:
@@ -49,23 +51,166 @@ def main():
         args = parse_args()
         initialise(args)
 
-        # Look at the input file paths & extract the 'stubs'.
+        # Record the prior state of the output directory.
         num_existing_output_files = count_all_files(args.output_dir, "output")
-        all_files = list_all_files(args.input_dir, sorted=True)
-        logging.info(f"Found {len(all_files)} input files.")
-        all_stubs = extract_file_path_stubs(
-            all_files, args.working_dir, sorted=True)
 
-        # Get a sorted list of *unique* file path stubs.
-        unique_stubs = remove_duplicate_stubs(all_stubs, sorted=True)
+        # Process all of the files under the input directory.
+        process_inputs(args)
 
-        # TODO FROM HERE.
-        logging.warning("WRANGLING NOT YET IMPLEMENTED")
+        # TODO.
+        # Check that all of the input files were processed.
+        # validate(num_existing_output_files)
+        logging.warning("Validation not yet implemented.")
+
+        # # TODO FROM HERE.
+        # logging.warning("WRANGLING NOT YET IMPLEMENTED")
 
     except Exception as e:
         logging.exception(str(e))
         print(f"ERROR: {str(e)}")
         exit()
+
+
+def process_inputs(args):
+    """
+    Process all of the files under the input directory.
+
+    Args:
+        args    (Namespace): Namespace object containing runtime parameters.
+    """
+
+    # Look at the input file paths & extract the 'stubs'.
+    all_files = list_all_files(args.input_dir, sorted=True)
+    logging.info(f"Found {len(all_files)} input files.")
+    all_stubs = extract_file_path_stubs(
+        all_files, args.working_dir, sorted=True)
+
+    # Get a sorted list of _unique_ file path stubs.
+    unique_stubs = remove_duplicates(all_stubs, sorted=True)
+    logging.info(f"Found {len(unique_stubs)} unique file path stubs.")
+
+    # Iterate over the unique stubs.
+    leftover_files = all_files
+    leftover_stubs = all_stubs
+    msg = f"Processing {len(unique_stubs)} unique title code "
+    msg = msg + "directory..." if len(unique_stubs) == 1 else "directories..."
+    print(msg)
+    for stub in tqdm(unique_stubs):
+
+        # Count the number of leftover stubs matching this unique stub.
+        i = count_matches_in_list(stub, leftover_stubs)
+
+        # Sanity check that we have a non-zero number of matches.
+        if i == 0:
+            msg = f"Found zero matches for the unique stub: {stub}"
+            raise RuntimeError(msg)
+
+        # Process all of the leftover files matching the current stub.
+        process_stub(stub, leftover_files[:i], args)
+
+        # When all full paths corresponding to the current stub have been
+        # processed, update the lists of leftover files & stubs.
+        leftover_files = leftover_files[i:]
+        leftover_stubs = leftover_stubs[i:]
+
+    if len(leftover_files) != 0:
+        msg = f"All stubs processed but {len(leftover_files)} leftover files."
+        raise RuntimeError(msg)
+
+
+def process_stub(stub, full_paths, args):
+    """
+    Process a single file path stub.
+
+    The 'stub' is the initial part of the path, up to & including the newspaper
+    title code.
+
+    Args:
+        stub             (str): A file path stub.
+        full_paths (list[str]): A list of full paths to a JISC newspaper files
+                                corresponding to the given stub.
+        args       (Namespace): Namespace object containing runtime parameters.
+    """
+
+    logging.info(f">>> Processing stub: {stub}")
+    # Count the number of leftover stubs corresponding to this stub.
+
+    while len(full_paths) != 0:
+
+        full_path = full_paths[0]
+        processed = process_full_path(full_path, len(stub), args)
+
+        logging.debug(
+            f"Processing of full path: {full_path} returned: {processed}")
+
+        # Remove the full_paths that have been processed. If processed is
+        # None,  only a single full path was processed. Otherwise, all of the
+        # full_paths that begin with the processed string have been processed.
+        if processed is None:
+            num_processed_paths = 1
+        else:
+            num_processed_paths = count_matches_in_list(processed, full_paths)
+        full_paths = full_paths[num_processed_paths:]
+
+    logging.info(f">>> Finished processing stub: {stub}")
+
+
+def process_full_path(full_path, stub_length, args):
+    """
+    Process a full path to a JISC newspaper file.
+
+    This function implements the core wrangling & deduplification algorithm:
+    - ignore non-newspaper files
+    - determine the maximal portion of the full path that can be processed in a
+    single copy operation:
+        - if the full path points to a duplicate file, add it to the list of
+        duplicates and continue.
+        - if the appropriate (standardised) output subdirectory already exists,
+        process the individual file given by the full path.
+        - otherwise, process the maximal subdirectory of the full path.
+
+    Here 'processing' means copying the input file or subdirectory to the
+    appropriate output directory and then standardising the output directory
+    structure. This standardisation procedure makes it possible to determine
+    how subsequent full paths should be processed via the above algorithm.
+
+    Args:
+        full_path   (str): The full path to a JISC newspaper file.
+        stub_length (int): The number of chars in the full_path up to &
+                           including the title code.
+        args  (Namespace): Namespace object containing runtime parameters.
+
+    Returns:
+        str: the portion of the full path that was processed, or None if
+        the full path points to a duplicate file.
+    """
+
+    logging.warning("Wrangling not yet implemented.")
+
+
+def remove_duplicates(strs, sorted=False):
+    """Remove duplicates from a list."""
+
+    unique_strs = list(set(strs))
+
+    if sorted:
+        unique_strs.sort()
+    return unique_strs
+
+
+def count_matches_in_list(prefix, str_list):
+    """
+    Count how many strings, at the start of a list, begin with a given prefix.
+    """
+
+    if len(str_list) == 0:
+        logging.warning("Empty list passed to 'count_matches_in_list'")
+        return 0
+
+    i = 0
+    while i != len(str_list) and str_list[i].startswith(prefix):
+        i += 1
+    return i
 
 
 def extract_file_path_stubs(paths, working_dir, sorted=False):
