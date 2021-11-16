@@ -78,10 +78,8 @@ def main():
         # Process all of the files under the input directory.
         process_inputs(args)
 
-        # TODO.
         # Check that all of the input files were processed.
-        # validate(num_existing_output_files)
-        logging.warning("Validation not yet implemented.")
+        validate(num_existing_output_files, args)
 
     except Exception as e:
         logging.exception(str(e))
@@ -534,6 +532,42 @@ def extract_pattern_stubs(pattern, paths):
     return ret
 
 
+def validate(num_existing_output_files, args):
+    """Validate the processing by comparing the number of input & output files.
+
+    Args:
+        num_existing_output_files (int): Number of output files that existed
+                                         before processing began.
+        args    (Namespace): Namespace object containing runtime parameters.
+    """
+
+    # Check all of the input files were processed. Every input file should be
+    # in the output directory, the duplicates file or the ignored file.
+    num_input_files = count_all_files(args.input_dir)
+    logging.info(f"Counted {num_input_files} input files.")
+
+    num_duplicated_files = count_lines(
+        working_file(name_duplicates_file, args.working_dir))
+    logging.info(f"Counted {num_duplicated_files} duplicated files.")
+
+    num_ignored_files = count_lines(
+        working_file(name_ignored_file, args.working_dir))
+    logging.info(f"Counted {num_ignored_files} ignored files.")
+
+    num_new_output_files = count_all_files(
+        args.output_dir) - num_existing_output_files
+    logging.info(f"Counted {num_new_output_files} new output files.")
+
+    num_processed_files = num_new_output_files + \
+        num_duplicated_files + num_ignored_files
+
+    if (num_processed_files != num_input_files):
+        msg = f"Only {num_processed_files} of {num_input_files} input files"
+        raise RuntimeError(f"{msg} were processed.")
+
+    logging.info("All files were processed successfully.")
+
+
 ##
 # Utils:
 ##
@@ -560,9 +594,8 @@ def count_all_files(dir, description=None):
     """Count the total number of files under a given directory."""
 
     ret = len(list_all_files(dir))
-    if not description:
-        description = str(dir)
-    logging.info(f"Counted {ret} files under the {description} directory.")
+    if description:
+        logging.info(f"Counted {ret} files under the {description} directory.")
     return ret
 
 
@@ -651,6 +684,20 @@ def move_from_to(from_dir, to_dir):
     Path.rmdir(Path(from_dir).absolute())
     logging.debug(f"Removed directory: {from_dir}.")
 
+
+def count_lines(file):
+    """
+    Count the number of lines in a file or file-like object.
+
+    Args:
+        file (file or stream): The file to be counted.
+    """
+
+    if not os.path.isfile(file):
+        return 0
+    with open(file, 'r') as f:
+        ret = sum(1 for _ in f.readlines())
+    return ret
 
 ##
 # Working files:
