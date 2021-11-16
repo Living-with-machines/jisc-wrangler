@@ -43,6 +43,12 @@ os_maps_pattern = compile(P_OSMAPS)
 dir_patterns = [service_pattern, service_subday_pattern, master_pattern,
                 master_subday_pattern, lsidy_pattern, os_maps_pattern]
 
+# Regex patterns for the STANDARDISED OUTPUT DIRECTORIES:
+# Note matches only end of line $.
+P_STANDARD_SUBDIR = os.path.join(
+    '[A-Z]{4}', '[0-9]{4}', '[0-9]{2}', '[0-9]{2}$')
+standard_subdir_pattern = compile(P_STANDARD_SUBDIR)
+
 # Working filenames
 filename_prefix = 'jw_'
 name_logfile = 'jw.log'
@@ -77,9 +83,6 @@ def main():
         # validate(num_existing_output_files)
         logging.warning("Validation not yet implemented.")
 
-        # # TODO FROM HERE.
-        # logging.warning("WRANGLING NOT YET IMPLEMENTED")
-
     except Exception as e:
         logging.exception(str(e))
         print(f"ERROR: {str(e)}")
@@ -104,12 +107,14 @@ def process_inputs(args):
     unique_stubs = remove_duplicates(all_stubs, sorted=True)
     logging.info(f"Found {len(unique_stubs)} unique file path stubs.")
 
+    # Print the number of titles to be processed (and a progress bar).
+    msg = f"Processing {len(unique_stubs)} unique title code "
+    msg += "directory..." if len(unique_stubs) == 1 else "directories..."
+    print(msg)
+
     # Iterate over the unique stubs.
     leftover_files = all_files
     leftover_stubs = all_stubs
-    msg = f"Processing {len(unique_stubs)} unique title code "
-    msg = msg + "directory..." if len(unique_stubs) == 1 else "directories..."
-    print(msg)
     for stub in tqdm(unique_stubs):
 
         # Count the number of leftover stubs matching this unique stub.
@@ -209,7 +214,7 @@ def process_full_path(full_path, stub_length, args):
 
     # Get the part of the full path that can be handled in this step by
     # inspecting the existing output directory structure.
-    from_to = copy_from_to(full_path, stub_length, args.output_dir)
+    from_to = determine_from_to(full_path, stub_length, args.output_dir)
 
     # If the "copy from" is the whole of the full_path, handle a single file
     if from_to[0] is None:
@@ -221,7 +226,7 @@ def process_full_path(full_path, stub_length, args):
     return from_to[0]
 
 
-def copy_from_to(full_path, stub_length, output_dir):
+def determine_from_to(full_path, stub_length, output_dir):
     """
     Determine what part of the given full path can be handled in a single copy
     operation by examining the existing output directory structure.
@@ -349,7 +354,101 @@ def standardise_output_dirs(output_subdir):
     Args:
         output_subdir (str): The output subdirectory to be standardised.
     """
-    logging.warning("Output subdirectory standardisation not yet implemented.")
+
+    # Get a list of all directories under the output subdirectory of interest.
+    subdirs = list_all_subdirs(output_subdir)
+
+    # Iterate over the list of subdirectories.
+    for subdir in subdirs:
+        # if a 'SERVICE' or 'MASTER' pattern matches,
+        # remove the last subdirectory.
+        if (service_pattern.search(subdir) or
+            service_subday_pattern.search(subdir) or
+            master_pattern.search(subdir) or
+                master_subday_pattern.search(subdir)):
+
+            remove_last_subdir(subdir)
+
+        # If a 'SUBDAY' pattern matches, rename the 'subday' directory.
+        if (service_subday_pattern.search(subdir) or
+                master_subday_pattern.search(subdir)):
+
+            remove_subday_subdir(subdir)
+
+        # TODO:
+        # If 'LSIDY' pattern matches, ... (TBD)
+        if lsidy_pattern.search(subdir):
+            raise NotImplementedError(
+                "Standardisation of 'LSIDY' directories not yet implemented")
+
+    # Check that the new subdirectory structure is standard.
+    unique_leaf_subdirs = list(
+        set([os.path.dirname(f) for f in list_all_files(output_subdir)]))
+    for subdir in unique_leaf_subdirs:
+        if not standard_subdir_pattern.search(subdir):
+            msg = f"Failed to standardise output subdirectory: {subdir}"
+            raise RuntimeError(msg)
+    logging.info(f"Standardised output directory {output_subdir}")
+
+
+def remove_last_subdir(path):
+    """
+    Removes the last subdirectory in the path on the filesystem, moving any
+    files contained to the parent directory.
+
+    For example, if the path is '/.../output_dir/0000038/1875/12/01/service/',
+    then:
+     - all files in the service/ subdirectory are moved to the parent 01/
+     - the service/ subdirectory is removed.
+
+    Args:
+        path (str): The full path to the subdirectory.
+    """
+
+    # Remove any trailing directory separator.
+    path = os.path.normpath(path)
+
+    # Make sure we're looking at a directory, not a file.
+    if os.path.isfile(path):
+        path = os.path.dirname(path)
+    if not os.path.isdir(path):
+        raise ValueError(f"Path {path} does not exist on the filesystem.")
+
+    move_from_to(from_dir=path, to_dir=os.path.dirname(path))
+
+
+def remove_subday_subdir(path):
+    """
+    Removes the subdirectory within the given output path that matches the
+    P_SUBDAY pattern and moves its contents to the corresponding directory
+    without the subday subscript. The full path is assumed to match either
+    the P_SERVICE_SUBDAY or P_MASTER_SUBDAY pattern, so the subscripted
+    directory is the last-but-one from the end.
+
+    For example, if the path is '/.../output_dir/PMGZ/1897/06/19_S' then the
+    last subdirectory is renamed from '19_S' to '19'.
+
+    Args:
+        path (str): The full path to the subscripted subdirectory.
+
+    Raises: ValueError if the subscripted directory name is not found in the
+            path.
+    """
+
+    # Remove any trailing directory separator.
+    path = os.path.normpath(path)
+
+    # Make sure the last-but-one subdirectory matches the expected pattern.
+    subscript_dir_path = os.path.dirname(path)
+    subday_pattern = compile(P_SUBDAY + '$', IGNORECASE)
+    if not subday_pattern.search(subscript_dir_path):
+        msg = f"Failed to match subscripted subdirectory:\n{subscript_dir_path}"
+        raise ValueError(msg)
+
+    # Remove the last characters (the subscript) from subdirectory name.
+    #new_path = os.path.join(subscript_dir_path[:-len_subday_subscript], '')
+    to_dir = subscript_dir_path[:-len_subday_subscript]
+    move_from_to(from_dir=subscript_dir_path, to_dir=to_dir)
 
 
 def target_output_subdir(full_path, len_subdir, output_dir):
@@ -518,6 +617,41 @@ def hash_file(path, blocksize=65536):
     return hasher.hexdigest()
 
 
+def list_all_subdirs(dir):
+    """
+    Get a list of all subdirectories in a given directory, recursively.
+
+    Args:
+        dir (str): The path to a directory on the filesystem.
+
+    Returns: a list of strings, each with a trailing directory separator.
+    """
+
+    return [os.path.join(str(d), '') for d in Path(dir).rglob('*')
+            if not os.path.isfile(d)]
+
+
+def move_from_to(from_dir, to_dir):
+    """Move all file from one directory to another, and delete the first
+    directory.
+
+    Args:
+        from_dir    (str): The path to the source directory.
+        to_dir      (str): The path to the target directory.
+    """
+
+    # If the target directory does not already exist, create it.
+    if not os.path.exists(to_dir):
+        Path(to_dir).mkdir(parents=False, exist_ok=True)
+        logging.info(f"Created non-subscripted subdirectory at {to_dir}")
+
+    for f in list_all_files(from_dir):
+        move(f, to_dir)
+    logging.debug(f"Moved all files from: {from_dir} to: {to_dir}")
+    Path.rmdir(Path(from_dir).absolute())
+    logging.debug(f"Removed directory: {from_dir}.")
+
+
 ##
 # Working files:
 ##
@@ -601,7 +735,7 @@ def initialise(args):
     Set up working directories and logging.
     """
 
-    print("This is JISC Wrangler")
+    print(">>> This is JISC Wrangler <<<")
 
     setup_directories(args)
     setup_logging(args)
