@@ -9,8 +9,11 @@ from sys import exit
 import logging
 import argparse
 from pathlib import Path
+from shutil import move, copy
+from distutils.dir_util import copy_tree
 from datetime import datetime
 from re import compile, IGNORECASE
+from hashlib import md5
 from tqdm import tqdm  # type: ignore
 
 __version__ = '0.0.1'
@@ -39,9 +42,16 @@ dir_patterns = [service_pattern, service_subday_pattern, master_pattern,
 filename_prefix = 'jw_'
 name_logfile = 'jw.log'
 name_unmatched_file = filename_prefix + 'unmatched.txt'
+name_ignored_file = filename_prefix + 'ignored.txt'
+name_duplicates_file = filename_prefix + 'duplicates.txt'
 
 # Constants
 len_title_code = len('ABCD')
+len_title_code_dir = len(os.path.join('ABCD', ''))
+len_title_code_y_dir = len(os.path.join('ABCD', 'YYYY', ''))
+len_title_code_ym_dir = len(os.path.join('ABCD', 'YYYY', 'MM', ''))
+len_title_code_ymd_dir = len(os.path.join('ABCD', 'YYYY', 'MM', 'DD', ''))
+len_subday_subscript = len('_X')
 
 
 def main():
@@ -185,32 +195,193 @@ def process_full_path(full_path, stub_length, args):
         the full path points to a duplicate file.
     """
 
-    logging.warning("Wrangling not yet implemented.")
+    logging.debug(f"Processing full path: {full_path}")
+
+    # If the full path matches the P_OSMAPS pattern, ignore it.
+    if os_maps_pattern.search(full_path):
+        ignore_file(full_path, args.working_dir)
+        return full_path
+
+    # Get the part of the full path that can be handled in this step by
+    # inspecting the existing output directory structure.
+    from_to = copy_from_to(full_path, stub_length, args.output_dir)
+
+    # If the "copy from" is the whole of the full_path, handle a single file
+    if from_to[0] is None:
+        process_duplicate_file(full_path, from_to, args.working_dir)
+    elif from_to[0] == full_path:
+        process_single_file(from_to, args.dry_run)
+    else:
+        process_subdir(from_to, args.dry_run)
+    return from_to[0]
 
 
-def remove_duplicates(strs, sorted=False):
-    """Remove duplicates from a list."""
-
-    unique_strs = list(set(strs))
-
-    if sorted:
-        unique_strs.sort()
-    return unique_strs
-
-
-def count_matches_in_list(prefix, str_list):
+def copy_from_to(full_path, stub_length, output_dir):
     """
-    Count how many strings, at the start of a list, begin with a given prefix.
+    Determine what part of the given full path can be handled in a single copy
+    operation by examining the existing output directory structure.
+
+    Args:
+        full_path   (str): The full path to a JISC newspaper file.
+        stub_length (int): The number of chars in the full_path up to &
+                           including the title code.
+        output_dir  (str): The output directory.
+
+    Returns:
+        str: the part of the full path that can be handled in a single copy
+        operation.
+        str: the target output subdirectory for the copy operation, or None if
+        a matching output file already exists.
     """
 
-    if len(str_list) == 0:
-        logging.warning("Empty list passed to 'count_matches_in_list'")
-        return 0
+    # TODO: Handle the lsidy_pattern.
+    if lsidy_pattern.search(full_path):
+        raise NotImplementedError("LSIDY pattern not yet handled.")
 
-    i = 0
-    while i != len(str_list) and str_list[i].startswith(prefix):
-        i += 1
-    return i
+    # Subdirectory suffix lengths (including a trailing slash) are:
+    #   - 5 (title code)
+    #   - 10 (title code plus year)
+    #   - 13 (title code plus year & month)
+    #   - 16 (title code plus year, month & day).
+    for len_subdir in [len_title_code_dir, len_title_code_y_dir,
+                       len_title_code_ym_dir, len_title_code_ymd_dir]:
+        out_dir = target_output_subdir(full_path, len_subdir, output_dir)
+        if not os.path.isdir(out_dir):
+            len_path = stub_length + len_subdir - len_title_code
+
+            # If the full_path matches a subday pattern and the day
+            # subdir is to be copied, extend the length of the 'copy from'
+            # path by the length of the subscript.
+            if len_subdir == 16:
+                if (service_subday_pattern.search(full_path) or
+                        master_subday_pattern.search(full_path)):
+                    len_path += len_subday_subscript
+
+            return full_path[:len_path], out_dir
+
+    # If the target subdirectory exists, but not the file, then we can copy
+    # only the file itself, unless a file with the same name alredy exists.
+    target_file = os.path.join(out_dir, os.path.basename(full_path))
+    if not os.path.isfile(target_file):
+        return full_path, out_dir
+
+    # If a matching file already exists, return None for the
+    return None, target_file
+
+
+def process_single_file(from_to, dry_run):
+    """
+    Process a single file by copying to the appropriate output directory.
+
+    Args:
+        from_to (str, str): The part of the full path that can be handled in a
+                            single copy operation, and the target output
+                            subdirectory for the copy.
+        dry_run     (bool): Flag indicating whether this is a dry run.
+    """
+
+    if not dry_run:
+        copy(from_to[0], from_to[1])
+    logging.info(f"Copied file from {from_to[0]} to {from_to[1]}")
+
+
+def process_duplicate_file(full_path, from_to, working_dir):
+    """
+    Process a duplicate filename that already exists in the output directory.
+
+    Args:
+        full_path    (str): The full path to a JISC newspaper file.
+        from_to (str, str): The part of the full path that can be handled in a
+                            single copy operation, and the target output
+                            subdirectory for the copy.
+        working_dir  (str): The path to the working directory.
+    """
+
+    # Hash both the current file and the existing one in the output directory.
+    hash_new = hash_file(full_path)
+    hash_original = hash_file(from_to[1])
+
+    # Compare the two hashes. If they're equal, append a line to the duplicates
+    # file. Otherwise raise an error.
+    if hash_new == hash_original:
+        with open(working_file(name_duplicates_file, working_dir), 'a+') as f:
+            f.write(f"{from_to[1]} duplicated at {full_path}\n")
+        f.close()
+        logging.info(f"Added file {full_path} to the duplicates list.")
+    else:
+        msg = "Conflicting but distinct files detected.\n"
+        msg = f"{msg}Input file: {full_path}\n"
+        msg = f"{msg}Output subdirectory: {from_to[1]}"
+        raise RuntimeError(msg)
+
+
+def process_subdir(from_to, dry_run):
+    """
+    Process a subdirectory by copying to the appropriate output directory
+    and standardise the subdirectory names.
+
+    Args:
+        from_to (str, str): The part of the full path that can be handled in a
+                            single copy operation, and the target output
+                            subdirectory for the copy.
+        dry_run     (bool): Flag indicating whether this is a dry run.
+    """
+
+    # If the copy_from is a directory, make a directory with the same name
+    # under the output directory and copy its contents. (Note the copy_tree
+    # function automatically creates the destination directory.)
+    copy_tree(from_to[0], from_to[1], dry_run)
+    logging.info(f"Copied directory from {from_to[0]} to {from_to[1]}")
+
+    # Standardise the destination directory structure.
+    standardise_output_dirs(from_to[1])
+
+
+def standardise_output_dirs(output_subdir):
+    """
+    Standardise the directory structure under an output subdirectory.
+
+    Args:
+        output_subdir (str): The output subdirectory to be standardised.
+    """
+    logging.warning("Output subdirectory standardisation not yet implemented.")
+
+
+def target_output_subdir(full_path, len_subdir, output_dir):
+    """
+    Construct the path to an output subdirectory. The subdirectory depth is
+    determined by the len_subdir argument.
+
+    Args:
+        full_path     (str): The full path to a JISC newspaper file.
+        len_subdir    (int): The number of chars in the output subdirectory
+                             path after the output directory.
+        output_dir    (str): The output directory.
+    """
+
+    subdir = standardised_output_subdir(full_path)[:len_subdir]
+    return os.path.join(output_dir, subdir)
+
+
+def standardised_output_subdir(full_path):
+    """
+    Determine the standardised output subdirectory for a given full path.
+
+    Args:
+        full_path   (str): The full path to a JISC newspaper file.
+    """
+
+    # Loop over the directory pattens.
+    for pattern in dir_patterns:
+
+        # If the directory pattern matches, extract the standardised path.
+        s = pattern.search(full_path)
+        if s:
+            return (s.group(1) + s.group(2)).upper()
+
+    # If no match is found, raise an error.
+    msg = f"Failed to compute a standardisation for the full path: {full_path}"
+    raise RuntimeError(msg)
 
 
 def extract_file_path_stubs(paths, working_dir, sorted=False):
@@ -259,16 +430,6 @@ def extract_pattern_stubs(pattern, paths):
     return ret
 
 
-def remove_duplicate_stubs(stubs, sorted=False):
-
-    unique_stubs = list(set(stubs))
-    logging.info(f"Found {len(unique_stubs)} unique file path stubs.")
-
-    if sorted:
-        unique_stubs.sort()
-    return unique_stubs
-
-
 ##
 # Utils:
 ##
@@ -300,6 +461,58 @@ def count_all_files(dir, description=None):
     logging.info(f"Counted {ret} files under the {description} directory.")
     return ret
 
+
+def count_matches_in_list(prefix, str_list):
+    """
+    Count how many strings, at the start of a list, begin with a given prefix.
+    """
+
+    if len(str_list) == 0:
+        logging.warning("Empty list passed to 'count_matches_in_list'")
+        return 0
+
+    i = 0
+    while i != len(str_list) and str_list[i].startswith(prefix):
+        i += 1
+    return i
+
+
+def remove_duplicates(strs, sorted=False):
+    """Remove duplicates from a list."""
+
+    unique_strs = list(set(strs))
+
+    if sorted:
+        unique_strs.sort()
+    return unique_strs
+
+
+def hash_file(path, blocksize=65536):
+    """Calculate the MD5 hash of a given file
+    Arguments
+    ---------
+        path {str, os.path}: Path to the file to be hashed.
+        blocksize {int}: Memory size to read in the file (default: 65536)
+    Returns
+    -------
+        hash {str}: The HEX digest hash of the given file
+    """
+    # Instatiate the hashlib module with md5
+    hasher = md5()
+
+    # Open the file and instatiate the buffer
+    f = open(path, "rb")
+    buf = f.read(blocksize)
+
+    # Continue to read in the file in blocks
+    while len(buf) > 0:
+        hasher.update(buf)  # Update the hash
+        buf = f.read(blocksize)  # Update the buffer
+
+    f.close()
+    return hasher.hexdigest()
+
+
 ##
 # Working files:
 ##
@@ -321,6 +534,15 @@ def write_unmatched_file(paths, working_dir):
         for path in paths:
             f.write(f"{path}\n")
     f.close()
+
+
+def ignore_file(full_path, working_dir):
+    """Process a file that can be safely ignored."""
+
+    with open(working_file(name_ignored_file, working_dir), 'a+') as f:
+        f.write(f"{full_path}\n")
+    f.close()
+    logging.info(f"Added file {full_path} to the ignored list.")
 
 
 ##

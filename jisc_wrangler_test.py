@@ -87,3 +87,233 @@ def test_count_matches_in_list():
     l = []
     p = '/data/JISC/JISC1_VOL'
     assert count_matches_in_list(p, l) == 0
+
+
+def test_target_output_subdir():
+
+    # TODO: test with each type of path (i.e. matching each directory pattern)
+
+    #
+    # Test with a full path matching the P_SERVICE pattern.
+    #
+    full_path = '/data/JISC/JISC1_VOL4_C1/042/0002_Job2001-final delivery  12$17$2006 at 2$48 PM/0001_$$Fileserver8$disk19$tape/2001-0274/Delivery/WO1/BDPO/1894/11/07/service/WO1_BDPO_1894_11_07-0008-054.xml'
+    output_dir = '/home/output/'
+
+    # If the suffix length is that of the title code subdirectory, then the output
+    # target subdirectory is the output directory plus the title code directory.
+    len_subdir = len('ABCD/')
+    actual = target_output_subdir(full_path, len_subdir, output_dir)
+    expected = output_dir + 'BDPO/'
+    assert actual == expected
+
+    # If the suffix length is that of the title code & year subdirectories, then
+    # the output target subdirectory is the output directory plus the title code
+    # and year directories.
+    len_subdir = len('ABCD/1999/')
+    actual = target_output_subdir(full_path, len_subdir, output_dir)
+    expected = output_dir
+    assert actual == output_dir + 'BDPO/' + '1894/'
+
+    len_subdir = len('ABCD/1999/00/')
+    actual = target_output_subdir(full_path, len_subdir, output_dir)
+    expected = output_dir
+    assert actual == output_dir + 'BDPO/' + '1894/' + '11/'
+
+    len_subdir = len('ABCD/1999/00/00/')
+    actual = target_output_subdir(full_path, len_subdir, output_dir)
+    expected = output_dir
+    assert actual == output_dir + 'BDPO/' + '1894/' + '11/' + '07/'
+
+    #
+    # Test with a full path matching the P_SERVICE_SUBDAY pattern.
+    #
+    full_path = '/data/JISC/JISC1/JISC2_VOL1_C0/097/2001-0346/WO1/LEMR/1873/01/04_S/service/WO1_LEMR_1873_01_04_S-0001.xml'
+    output_dir = '/home/output/'
+
+    # If the suffix length is that of the title code subdirectory, then the output
+    # target subdirectory is the output directory plus the title code directory.
+    len_subdir = len('ABCD/')
+    actual = target_output_subdir(full_path, len_subdir, output_dir)
+    expected = output_dir + 'LEMR/'
+    assert actual == expected
+
+    # If the suffix length is that of the title code & year subdirectories, then
+    # the output target subdirectory is the output directory plus the title code
+    # and year directories.
+    len_subdir = len('ABCD/1999/')
+    actual = target_output_subdir(full_path, len_subdir, output_dir)
+    expected = output_dir
+    assert actual == output_dir + 'LEMR/' + '1873/'
+
+    len_subdir = len('ABCD/1999/00/')
+    actual = target_output_subdir(full_path, len_subdir, output_dir)
+    expected = output_dir
+    assert actual == output_dir + 'LEMR/' + '1873/' + '01/'
+
+    len_subdir = len('ABCD/1999/00/00/')
+    actual = target_output_subdir(full_path, len_subdir, output_dir)
+    expected = output_dir
+    assert actual == output_dir + 'LEMR/' + '1873/' + '01/' + '04/'
+
+
+def test_standardised_output_subdir():
+
+    # TODO: test with each type of path (i.e. matching each directory pattern)
+
+    #
+    # Test with a full path matching the P_SERVICE pattern.
+    #
+    full_path = '/data/JISC/JISC1_VOL1_C0/009/Data/Job-2001/Batch_0162/2001-0162/WO1/RDNP/1862/01/05/service/WO1_RDNP_1862_01_05-0001-001.xml'
+    assert service_pattern.search(full_path)
+
+    actual = standardised_output_subdir(full_path)
+    expected = 'RDNP/1862/01/05/'
+    assert actual == expected
+
+    # This full_path matches the P_SERVICE_SUBDAY pattern.
+    full_path = '/data/JISC/JISC1_VOL1_C0/009/Data/Job-2001/Batch_0162/2001-0162/WO1/RDNP/1862/01/05_S/service/WO1_RDNP_1862_01_05-0001-001.xml'
+    assert service_subday_pattern.search(full_path)
+
+    actual = standardised_output_subdir(full_path)
+    expected = 'RDNP/1862/01/05/'
+    assert actual == expected
+
+
+def test_copy_from_to(fs):
+
+    # Use pyfakefs to fake the filesystem
+    output_dir = '/home/output/'
+    fs.create_dir('/home/output/')
+
+    #
+    # Test with a full path matching the P_SERVICE pattern.
+    #
+    full_path = '/data/JISC/JISC1_VOL4_C1/042/0002_Job2001-final delivery  12$17$2006 at 2$48 PM/0001_$$Fileserver8$disk19$tape/2001-0274/Delivery/WO1/BDPO/1894/11/07/service/WO1_BDPO_1894_11_07-0008-054.xml'
+    stub = '/data/JISC/JISC1_VOL4_C1/042/0002_Job2001-final delivery  12$17$2006 at 2$48 PM/0001_$$Fileserver8$disk19$tape/2001-0274/Delivery/WO1/BDPO'
+
+    # If the title directory is missing, we can copy the entire title.
+    actual = copy_from_to(full_path, len(stub), output_dir)
+    expected_from = '/data/JISC/JISC1_VOL4_C1/042/0002_Job2001-final delivery  12$17$2006 at 2$48 PM/0001_$$Fileserver8$disk19$tape/2001-0274/Delivery/WO1/BDPO/'
+    expected_to = '/home/output/BDPO/'
+    assert actual[0] == expected_from
+    assert actual[1] == expected_to
+
+    # If the matching title directory is missing, we can copy the entire title.
+    fs.create_dir('/home/output/ABCD/')
+    actual = copy_from_to(full_path, len(stub), output_dir)
+    expected_from = '/data/JISC/JISC1_VOL4_C1/042/0002_Job2001-final delivery  12$17$2006 at 2$48 PM/0001_$$Fileserver8$disk19$tape/2001-0274/Delivery/WO1/BDPO/'
+    expected_to = '/home/output/BDPO/'
+    assert actual[0] == expected_from
+    assert actual[1] == expected_to
+
+    # If the year directory is missing, we can handle the entire year.
+    fs.create_dir('/home/output/BDPO/')
+    actual = copy_from_to(full_path, len(stub), output_dir)
+    expected_from = '/data/JISC/JISC1_VOL4_C1/042/0002_Job2001-final delivery  12$17$2006 at 2$48 PM/0001_$$Fileserver8$disk19$tape/2001-0274/Delivery/WO1/BDPO/1894/'
+    expected_to = '/home/output/BDPO/1894/'
+    assert actual[0] == expected_from
+    assert actual[1] == expected_to
+
+    # If the matching year directory is missing, we can handle the entire year.
+    fs.create_dir('/home/output/BDPO/1999/')
+    actual = copy_from_to(full_path, len(stub), output_dir)
+    expected_from = '/data/JISC/JISC1_VOL4_C1/042/0002_Job2001-final delivery  12$17$2006 at 2$48 PM/0001_$$Fileserver8$disk19$tape/2001-0274/Delivery/WO1/BDPO/1894/'
+    expected_to = '/home/output/BDPO/1894/'
+    assert actual[0] == expected_from
+    assert actual[1] == expected_to
+
+    # If the month directory is missing, we can handle the entire month.
+    fs.create_dir('/home/output/BDPO/1894/')
+    actual = copy_from_to(full_path, len(stub), output_dir)
+    expected_from = '/data/JISC/JISC1_VOL4_C1/042/0002_Job2001-final delivery  12$17$2006 at 2$48 PM/0001_$$Fileserver8$disk19$tape/2001-0274/Delivery/WO1/BDPO/1894/11/'
+    expected_to = '/home/output/BDPO/1894/11/'
+    assert actual[0] == expected_from
+    assert actual[1] == expected_to
+
+    # If the matching month directory is missing, we can handle the entire month.
+    fs.create_dir('/home/output/BDPO/1894/12/')
+    actual = copy_from_to(full_path, len(stub), output_dir)
+    expected_from = '/data/JISC/JISC1_VOL4_C1/042/0002_Job2001-final delivery  12$17$2006 at 2$48 PM/0001_$$Fileserver8$disk19$tape/2001-0274/Delivery/WO1/BDPO/1894/11/'
+    expected_to = '/home/output/BDPO/1894/11/'
+    assert actual[0] == expected_from
+    assert actual[1] == expected_to
+
+    # If the day directory is missing, we can handle the entire day.
+    fs.create_dir('/home/output/BDPO/1894/11/')
+    actual = copy_from_to(full_path, len(stub), output_dir)
+    expected_from = '/data/JISC/JISC1_VOL4_C1/042/0002_Job2001-final delivery  12$17$2006 at 2$48 PM/0001_$$Fileserver8$disk19$tape/2001-0274/Delivery/WO1/BDPO/1894/11/07/'
+    expected_to = '/home/output/BDPO/1894/11/07/'
+    assert actual[0] == expected_from
+    assert actual[1] == expected_to
+
+    # If the matching day directory is missing, we can handle the entire day.
+    fs.create_dir('/home/output/BDPO/1894/11/08')
+    actual = copy_from_to(full_path, len(stub), output_dir)
+    expected_from = '/data/JISC/JISC1_VOL4_C1/042/0002_Job2001-final delivery  12$17$2006 at 2$48 PM/0001_$$Fileserver8$disk19$tape/2001-0274/Delivery/WO1/BDPO/1894/11/07/'
+    expected_to = '/home/output/BDPO/1894/11/07/'
+    assert actual[0] == expected_from
+    assert actual[1] == expected_to
+
+    # If the matching day directory exists, but not a matching file, we can handle the file.
+    fs.create_dir('/home/output/BDPO/1894/11/07/')
+    actual = copy_from_to(full_path, len(stub), output_dir)
+    expected_from = paths[0]
+    expected_to = '/home/output/BDPO/1894/11/07/'
+    assert actual[0] == expected_from
+    assert actual[1] == expected_to
+
+    # If a matching file exists, we can't handle anything.
+    fs.create_file(
+        '/home/output/BDPO/1894/11/07/WO1_BDPO_1894_11_07-0008-054.xml')
+    actual = copy_from_to(full_path, len(stub), output_dir)
+    expected_from = None
+    expected_to = '/home/output/BDPO/1894/11/07/WO1_BDPO_1894_11_07-0008-054.xml'
+    assert actual[0] == expected_from
+    assert actual[1] == expected_to
+
+    #
+    # Test with a full path matching the P_SERVICE_SUBDAY pattern.
+    #
+    full_path = '/data/JISC/JISC1/JISC2_VOL1_C0/097/2001-0346/WO1/LEMR/1873/01/04_S/service/WO1_LEMR_1873_01_04_S-0001.xml'
+    stub = '/data/JISC/JISC1/JISC2_VOL1_C0/097/2001-0346/WO1/LEMR'
+
+    # If the title directory is missing, we can copy the entire title.
+    actual = copy_from_to(full_path, len(stub), output_dir)
+    expected_from = os.path.join(stubs[4], '')
+    expected_to = '/home/output/LEMR/'
+    assert actual[0] == expected_from
+    assert actual[1] == expected_to
+
+    # If the matching month directory is missing, we can handle the entire month.
+    fs.create_dir('/home/output/LEMR/1873/02/')
+    actual = copy_from_to(full_path, len(stub), output_dir)
+    expected_from = '/data/JISC/JISC1/JISC2_VOL1_C0/097/2001-0346/WO1/LEMR/1873/01/'
+    expected_to = '/home/output/LEMR/1873/01/'
+    assert actual[0] == expected_from
+    assert actual[1] == expected_to
+
+    # If the matching day directory is missing, we can handle the entire day.
+    # Note that in this case the 'copy from' directory includes the subday subscript.
+    fs.create_dir('/home/output/LEMR/1873/01/03/')
+    actual = copy_from_to(full_path, len(stub), output_dir)
+    expected_from = '/data/JISC/JISC1/JISC2_VOL1_C0/097/2001-0346/WO1/LEMR/1873/01/04_S/'
+    expected_to = '/home/output/LEMR/1873/01/04/'
+    assert actual[0] == expected_from
+    assert actual[1] == expected_to
+
+    # If the matching day directory exists, but not a matching file, we can handle the file.
+    fs.create_dir('/home/output/LEMR/1873/01/04/')
+    actual = copy_from_to(full_path, len(stub), output_dir)
+    expected_from = full_path
+    expected_to = '/home/output/LEMR/1873/01/04/'
+    assert actual[0] == expected_from
+    assert actual[1] == expected_to
+
+    # If a matching file exists, we can't handle anything.
+    fs.create_file(
+        '/home/output/LEMR/1873/01/04/WO1_LEMR_1873_01_04_S-0001.xml')
+    actual = copy_from_to(full_path, len(stub), output_dir)
+    expected_from = None
+    expected_to = '/home/output/LEMR/1873/01/04/WO1_LEMR_1873_01_04_S-0001.xml'
+    assert actual[0] == expected_from
+    assert actual[1] == expected_to
