@@ -21,12 +21,17 @@ __version__ = '0.0.1'
 # Regex patterns for INPUT DIRECTORIES:
 # These should be exhaustive when used case-insenstively (grep -E -i).
 # Parts in parentheses are the corresponding standardised output paths.
-P_SERVICE = '([A-Z]{4}\\/[0-9]{4}\\/[0-9]{2}\\/[0-9]{2})(\\/)service\\/'
-P_SERVICE_SUBDAY = '([A-Z]{4}\\/[0-9]{4}\\/[0-9]{2}\\/[0-9]{2})_[S,V](\\/)service\\/'
-P_MASTER = '([A-Z]{4}\\/[0-9]{4}\\/[0-9]{2}\\/[0-9]{2})(\\/)master\\/'
-P_MASTER_SUBDAY = '([A-Z]{4}\\/[0-9]{4}\\/[0-9]{2}\\/[0-9]{2})_[S,V](\\/)master\\/'
+P_SERVICE = os.path.join(
+    '([A-Z]{4}', '[0-9]{4}', '[0-9]{2}', '[0-9]{2})(', ')service', '')
+P_MASTER = os.path.join(
+    '([A-Z]{4}', '[0-9]{4}', '[0-9]{2}', '[0-9]{2})(', ')master', '')
+P_SUBDAY = '_[S,V]'
+P_SERVICE_SUBDAY = os.path.join('([A-Z]{4}', '[0-9]{4}', '[0-9]{2}',
+                                '[0-9]{2})' + P_SUBDAY + '(', ')service', '')
+P_MASTER_SUBDAY = os.path.join('([A-Z]{4}', '[0-9]{4}', '[0-9]{2}',
+                               '[0-9]{2})' + P_SUBDAY + '(', ')master', '')
 P_LSIDY = 'lsidy'
-P_OSMAPS = 'OSMaps.*?(\\.shp|\\/metadata)\\.xml$'
+P_OSMAPS = os.path.join('OSMaps.*?(\\.shp|', 'metadata)\\.xml$')
 
 service_pattern = compile(P_SERVICE, IGNORECASE)
 service_subday_pattern = compile(P_SERVICE_SUBDAY, IGNORECASE)
