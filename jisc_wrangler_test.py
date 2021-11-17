@@ -180,11 +180,7 @@ def test_target_output_subdir():
 
 def test_standardised_output_subdir():
 
-    # TODO: test with each type of path (i.e. matching each directory pattern)
-
-    #
     # Test with a full path matching the P_SERVICE pattern.
-    #
     full_path = '/data/JISC/JISC1_VOL1_C0/009/Data/Job-2001/Batch_0162/2001-0162/WO1/RDNP/1862/01/05/service/WO1_RDNP_1862_01_05-0001-001.xml'
     assert service_pattern.search(full_path)
 
@@ -192,12 +188,36 @@ def test_standardised_output_subdir():
     expected = 'RDNP/1862/01/05/'
     assert actual == expected
 
-    # This full_path matches the P_SERVICE_SUBDAY pattern.
+    # Test with a full path matching the P_SERVICE_SUBDAY pattern.
     full_path = '/data/JISC/JISC1_VOL1_C0/009/Data/Job-2001/Batch_0162/2001-0162/WO1/RDNP/1862/01/05_S/service/WO1_RDNP_1862_01_05-0001-001.xml'
     assert service_subday_pattern.search(full_path)
 
     actual = standardised_output_subdir(full_path)
     expected = 'RDNP/1862/01/05/'
+    assert actual == expected
+
+    # Test with a full path matching the P_MASTER pattern.
+    full_path = '/data/JISC/JISC1_VOL1_C0/009/Data/Job-2001/Batch_0162/2001-0162/WO1/RDNP/1862/01/05/master/WO1_RDNP_1862_01_05-0001-001.xml'
+    assert master_pattern.search(full_path)
+
+    actual = standardised_output_subdir(full_path)
+    expected = 'RDNP/1862/01/05/'
+    assert actual == expected
+
+    # Test with a full path matching the P_MASTER_SUBDAY pattern.
+    full_path = '/data/JISC/JISC1_VOL1_C0/009/Data/Job-2001/Batch_0162/2001-0162/WO1/RDNP/1862/01/05_V/master/WO1_RDNP_1862_01_05-0001-001.xml'
+    assert master_subday_pattern.search(full_path)
+
+    actual = standardised_output_subdir(full_path)
+    expected = 'RDNP/1862/01/05/'
+    assert actual == expected
+
+    # Test with a full path matching the P_LSIDYV pattern.
+    full_path = '/data/JISC/JISC2/lsidyvfd9b/IMTS-1877-10-13_mets.xml'
+    assert lsidyv_pattern.search(full_path)
+
+    actual = standardised_output_subdir(full_path)
+    expected = 'IMTS/1877/10/13/'
     assert actual == expected
 
 
