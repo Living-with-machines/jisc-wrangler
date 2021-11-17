@@ -30,18 +30,18 @@ P_SERVICE_SUBDAY = os.path.join('([A-Z]{4}', '[0-9]{4}', '[0-9]{2}',
                                 '[0-9]{2})' + P_SUBDAY + '(', ')service', '')
 P_MASTER_SUBDAY = os.path.join('([A-Z]{4}', '[0-9]{4}', '[0-9]{2}',
                                '[0-9]{2})' + P_SUBDAY + '(', ')master', '')
-P_LSIDY = 'lsidy'
+P_LSIDYV = os.path.join('lsidyv[a-z0-9]{4}[a-z0-9]?[a-z0-9]?', '')
 P_OSMAPS = os.path.join('OSMaps.*?(\\.shp|', 'metadata)\\.xml$')
 
 service_pattern = compile(P_SERVICE, IGNORECASE)
 service_subday_pattern = compile(P_SERVICE_SUBDAY, IGNORECASE)
 master_pattern = compile(P_MASTER, IGNORECASE)
 master_subday_pattern = compile(P_MASTER_SUBDAY, IGNORECASE)
-lsidy_pattern = compile(P_LSIDY)
+lsidyv_pattern = compile(P_LSIDYV)
 os_maps_pattern = compile(P_OSMAPS)
 
 dir_patterns = [service_pattern, service_subday_pattern, master_pattern,
-                master_subday_pattern, lsidy_pattern, os_maps_pattern]
+                master_subday_pattern, lsidyv_pattern, os_maps_pattern]
 
 # Regex patterns for the STANDARDISED OUTPUT DIRECTORIES:
 # Note matches only end of line $.
@@ -242,8 +242,8 @@ def determine_from_to(full_path, stub_length, output_dir):
         a matching output file already exists.
     """
 
-    # TODO: Handle the lsidy_pattern.
-    if lsidy_pattern.search(full_path):
+    # TODO: Handle the lsidyv_pattern.
+    if lsidyv_pattern.search(full_path):
         raise NotImplementedError("LSIDY pattern not yet handled.")
 
     # Subdirectory suffix lengths (including a trailing slash) are:
@@ -375,7 +375,7 @@ def standardise_output_dirs(output_subdir):
 
         # TODO:
         # If 'LSIDY' pattern matches, ... (TBD)
-        if lsidy_pattern.search(subdir):
+        if lsidyv_pattern.search(subdir):
             raise NotImplementedError(
                 "Standardisation of 'LSIDY' directories not yet implemented")
 
@@ -479,6 +479,10 @@ def standardised_output_subdir(full_path):
         # If the directory pattern matches, extract the standardised path.
         s = pattern.search(full_path)
         if s:
+            if pattern == lsidyv_pattern:
+                # Handle the lsidvy pattern by inspecting the filename.
+                filename = os.path.basename(full_path)
+                return None  # TODO.
             return (s.group(1) + s.group(2)).upper()
 
     # If no match is found, raise an error.
