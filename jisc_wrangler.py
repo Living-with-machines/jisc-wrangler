@@ -338,11 +338,12 @@ def process_subdir(from_to, dry_run):
     # If the copy_from is a directory, make a directory with the same name
     # under the output directory and copy its contents. (Note the copy_tree
     # function automatically creates the destination directory.)
-    copy_tree(from_to[0], from_to[1], dry_run)
+    copy_tree(src=from_to[0], dst=from_to[1], dry_run=dry_run)
     logging.info(f"Copied directory from {from_to[0]} to {from_to[1]}")
 
     # Standardise the destination directory structure.
-    standardise_output_dirs(from_to[1])
+    if not dry_run:
+        standardise_output_dirs(from_to[1])
 
 
 def standardise_output_dirs(output_subdir):
@@ -553,6 +554,10 @@ def validate(num_existing_output_files, args):
     num_ignored_files = count_lines(
         working_file(name_ignored_file, args.working_dir))
     logging.info(f"Counted {num_ignored_files} ignored files.")
+
+    if args.dry_run:
+        logging.info("Final validation checks omitted in dry-run.")
+        return
 
     num_new_output_files = count_all_files(
         args.output_dir) - num_existing_output_files
