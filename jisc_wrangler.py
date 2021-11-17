@@ -326,8 +326,8 @@ def process_duplicate_file(full_path, from_to, working_dir, dry_run):
         msg = "Conflicting but distinct files detected.\n"
         msg = f"{msg}Input file: {full_path}\nConflicts with: {from_to[1]}"
         logging.warning(msg)
-        from_to[1] = alt_output_file(from_to[1])
-        process_single_file(from_to, dry_run)
+        alt_from_to = (from_to[0], alt_output_file(from_to[1]))
+        process_single_file(alt_from_to, dry_run)
 
 
 def process_subdir(from_to, dry_run):
