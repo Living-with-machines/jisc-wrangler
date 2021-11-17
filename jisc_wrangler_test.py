@@ -339,3 +339,13 @@ def test_determine_from_to(fs):
     expected_to = '/home/output/LEMR/1873/01/04/WO1_LEMR_1873_01_04_S-0001.xml'
     assert actual[0] == expected_from
     assert actual[1] == expected_to
+
+
+def test_alt_output_file():
+
+    file_path = "/jisc1and2full/clean/ANJO/1891/01/07/WO1_ANJO_1891_01_07-0001-001.xml"
+    expected = "/jisc1and2full/clean/ANJO/1891/01/07/WO1_ANJO_1891_01_07-0001-001" + \
+        alt_filename_suffix + ".xml"
+    actual = alt_output_file(file_path)
+
+    assert actual == expected

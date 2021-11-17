@@ -64,6 +64,9 @@ len_title_code_ym_dir = len(os.path.join('ABCD', 'YYYY', 'MM', ''))
 len_title_code_ymd_dir = len(os.path.join('ABCD', 'YYYY', 'MM', 'DD', ''))
 len_subday_subscript = len('_X')
 
+# Suffix used to distinguish non-duplicates with conflicting filenames.
+alt_filename_suffix = '_ALT'
+
 
 def main():
 
@@ -216,7 +219,8 @@ def process_full_path(full_path, stub_length, args):
 
     # If the "copy from" is the whole of the full_path, handle a single file
     if from_to[0] is None:
-        process_duplicate_file(full_path, from_to, args.working_dir)
+        process_duplicate_file(
+            full_path, from_to, args.working_dir, args.dry_run)
     elif from_to[0] == full_path:
         process_single_file(from_to, args.dry_run)
     else:
@@ -293,7 +297,7 @@ def process_single_file(from_to, dry_run):
     logging.info(f"Copied file from {from_to[0]} to {from_to[1]}")
 
 
-def process_duplicate_file(full_path, from_to, working_dir):
+def process_duplicate_file(full_path, from_to, working_dir, dry_run):
     """
     Process a duplicate filename that already exists in the output directory.
 
@@ -303,24 +307,27 @@ def process_duplicate_file(full_path, from_to, working_dir):
                             single copy operation, and the target output
                             subdirectory for the copy.
         working_dir  (str): The path to the working directory.
+        dry_run     (bool): Flag indicating whether this is a dry run.
     """
 
     # Hash both the current file and the existing one in the output directory.
     hash_new = hash_file(full_path)
     hash_original = hash_file(from_to[1])
 
-    # Compare the two hashes. If they're equal, append a line to the duplicates
-    # file. Otherwise raise an error.
+    # Compare the two hashes.
     if hash_new == hash_original:
+        # If they're equal, append a line to the duplicates file.
         with open(working_file(name_duplicates_file, working_dir), 'a+') as f:
             f.write(f"{from_to[1]} duplicated at {full_path}\n")
         f.close()
         logging.info(f"Added file {full_path} to the duplicates list.")
     else:
+        # Otherwise, log a warning and modify the output filename of the dupe.
         msg = "Conflicting but distinct files detected.\n"
-        msg = f"{msg}Input file: {full_path}\n"
-        msg = f"{msg}Output subdirectory: {from_to[1]}"
-        raise RuntimeError(msg)
+        msg = f"{msg}Input file: {full_path}\nConflicts with: {from_to[1]}"
+        logging.warning(msg)
+        from_to[1] = alt_output_file(from_to[1])
+        process_single_file(from_to, dry_run)
 
 
 def process_subdir(from_to, dry_run):
@@ -653,6 +660,19 @@ def hash_file(path, blocksize=65536):
 
     f.close()
     return hasher.hexdigest()
+
+
+def alt_output_file(file_path):
+    """Get an alternative output file path.
+
+    Args:
+        file_path (str): The standard output file path
+
+    Returns:
+        The alternative output file path (string).
+    """
+    file_path, extension = os.path.splitext(file_path)
+    return file_path + alt_filename_suffix + extension
 
 
 def list_all_subdirs(dir):
