@@ -30,7 +30,7 @@ P_SERVICE_SUBDAY = os.path.join('([A-Z]{4}', '[0-9]{4}', '[0-9]{2}',
                                 '[0-9]{2})' + P_SUBDAY + '(', ')service', '')
 P_MASTER_SUBDAY = os.path.join('([A-Z]{4}', '[0-9]{4}', '[0-9]{2}',
                                '[0-9]{2})' + P_SUBDAY + '(', ')master', '')
-P_LSIDYV = os.path.join('lsidyv[a-z0-9]{4}[a-z0-9]?[a-z0-9]?', '')
+P_LSIDYV = os.path.join('lsidyv[a-z0-9]{4}[a-z0-9]?[a-z0-9]?', '[A-Z]{4}')
 P_OSMAPS = os.path.join('OSMaps.*?(\\.shp|', 'metadata)\\.xml$')
 
 service_pattern = compile(P_SERVICE, IGNORECASE)
@@ -540,10 +540,16 @@ def extract_pattern_stubs(pattern, paths):
     Returns: a list of strings, one stub for each of the given paths.
     """
 
-    # Match on the directory pattern (title code and subdirectories thereof)
-    # but extract only the initial part of the path (up to & including the title code).
-    ret = [str[0:m.start() + len_title_code]
-           for str in paths if (m := pattern.search(str))]
+    if pattern == lsidyv_pattern:
+        # Handle the lsidyv pattern.
+        ret = [str[0:m.end()] for str in paths if (m := pattern.search(str))]
+    else:
+        # Match on the directory pattern (title code & subdirectories thereof)
+        # but extract only the initial part of the path (up to & including the
+        # title code).
+        ret = [str[0:m.start() + len_title_code]
+               for str in paths if (m := pattern.search(str))]
+
     logging.info(
         f"Found {len(ret)} files matching the {pattern.pattern} pattern.")
     return ret
