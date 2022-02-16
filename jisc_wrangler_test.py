@@ -213,6 +213,14 @@ def test_standardised_output_subdir():
     assert actual == expected
 
     # Test with a full path matching the P_LSIDYV pattern.
+    full_path = '/data/JISC/JISC2/lsidyv100b3f/MOPT-1863-02-16.xml'
+    assert lsidyv_pattern.search(full_path)
+
+    actual = standardised_output_subdir(full_path)
+    expected = 'MOPT/1863/02/16/'
+    assert actual == expected
+
+    # Test with a full path matching the P_LSIDYV pattern with _mets subscript.
     full_path = '/data/JISC/JISC2/lsidyvfd9b/IMTS-1877-10-13_mets.xml'
     assert lsidyv_pattern.search(full_path)
 

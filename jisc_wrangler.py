@@ -63,6 +63,7 @@ len_title_code_y_dir = len(os.path.join('ABCD', 'YYYY', ''))
 len_title_code_ym_dir = len(os.path.join('ABCD', 'YYYY', 'MM', ''))
 len_title_code_ymd_dir = len(os.path.join('ABCD', 'YYYY', 'MM', 'DD', ''))
 len_subday_subscript = len('_X')
+len_day = len('DD')
 
 # Suffix used to distinguish non-duplicates with conflicting filenames.
 alt_filename_suffix = '_ALT'
@@ -490,7 +491,10 @@ def standardised_output_subdir(full_path):
             if pattern == lsidyv_pattern:
                 # Handle the lsidvy pattern by inspecting the filename.
                 filename = os.path.basename(full_path)
-                return None  # TODO.
+                title_code, year, month = filename.split('-')[:3]
+                day = filename.split('-')[-1].split('.')[0][:len_day]
+                return os.path.join(title_code, year, month, day, '')
+
             return (s.group(1) + s.group(2)).upper()
 
     # If no match is found, raise an error.
