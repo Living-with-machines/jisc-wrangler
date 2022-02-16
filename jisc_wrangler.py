@@ -278,7 +278,8 @@ def determine_from_to(full_path, stub_length, output_dir):
     if not os.path.isfile(target_file):
         return full_path, out_dir
 
-    # If a matching file already exists, return None for the
+    # If a matching file already exists, return None to indicate that no
+    # files can be handled in a copy operation.
     return None, target_file
 
 
@@ -493,7 +494,7 @@ def standardised_output_subdir(full_path):
                 filename = os.path.basename(full_path)
                 title_code, year, month = filename.split('-')[:3]
                 day = filename.split('-')[-1].split('.')[0][:len_day]
-                return os.path.join(title_code, year, month, day, '')
+                return os.path.join(title_code.upper(), year, month, day, '')
 
             return (s.group(1) + s.group(2)).upper()
 
