@@ -30,18 +30,18 @@ P_SERVICE_SUBDAY = os.path.join('([A-Z]{4}', '[0-9]{4}', '[0-9]{2}',
                                 '[0-9]{2})' + P_SUBDAY + '(', ')service', '')
 P_MASTER_SUBDAY = os.path.join('([A-Z]{4}', '[0-9]{4}', '[0-9]{2}',
                                '[0-9]{2})' + P_SUBDAY + '(', ')master', '')
-P_LSIDY = 'lsidy'
+P_LSIDYV = os.path.join('lsidyv[a-z0-9]{4}[a-z0-9]?[a-z0-9]?', '[A-Z]{4}')
 P_OSMAPS = os.path.join('OSMaps.*?(\\.shp|', 'metadata)\\.xml$')
 
 service_pattern = compile(P_SERVICE, IGNORECASE)
 service_subday_pattern = compile(P_SERVICE_SUBDAY, IGNORECASE)
 master_pattern = compile(P_MASTER, IGNORECASE)
 master_subday_pattern = compile(P_MASTER_SUBDAY, IGNORECASE)
-lsidy_pattern = compile(P_LSIDY)
+lsidyv_pattern = compile(P_LSIDYV)
 os_maps_pattern = compile(P_OSMAPS)
 
 dir_patterns = [service_pattern, service_subday_pattern, master_pattern,
-                master_subday_pattern, lsidy_pattern, os_maps_pattern]
+                master_subday_pattern, lsidyv_pattern, os_maps_pattern]
 
 # Regex patterns for the STANDARDISED OUTPUT DIRECTORIES:
 # Note matches only end of line $.
@@ -63,6 +63,7 @@ len_title_code_y_dir = len(os.path.join('ABCD', 'YYYY', ''))
 len_title_code_ym_dir = len(os.path.join('ABCD', 'YYYY', 'MM', ''))
 len_title_code_ymd_dir = len(os.path.join('ABCD', 'YYYY', 'MM', 'DD', ''))
 len_subday_subscript = len('_X')
+len_day = len('DD')
 
 # Suffix used to distinguish non-duplicates with conflicting filenames.
 alt_filename_suffix = '_ALT'
@@ -246,30 +247,54 @@ def determine_from_to(full_path, stub_length, output_dir):
         a matching output file already exists.
     """
 
-    # TODO: Handle the lsidy_pattern.
-    if lsidy_pattern.search(full_path):
-        raise NotImplementedError("LSIDY pattern not yet handled.")
+    # Handle lsidvv files one at a time because their full paths do not include
+    # YYYY/MM/DD subdirectories.
+    if lsidyv_pattern.search(full_path):
+
+        # The length of the target subdirectory in this case always includes
+        # the year, month and day (because we're processing a single file).
+        len_subdir = len_title_code_ymd_dir
+        out_dir = target_output_subdir(full_path, len_subdir, output_dir)
+
+        # Create the output directory if it doesn't already exist.
+        if not os.path.isdir(out_dir):
+            Path(out_dir).mkdir(parents=True, exist_ok=True)
+            logging.info(f"Created subdirectory at {out_dir}")
+
+    # Handle regular (i.e. non-lsidyv_pattern) files by checking which output
+    # subdirectories already exist.
 
     # Subdirectory suffix lengths (including a trailing slash) are:
     #   - 5 (title code)
     #   - 10 (title code plus year)
     #   - 13 (title code plus year & month)
     #   - 16 (title code plus year, month & day).
-    for len_subdir in [len_title_code_dir, len_title_code_y_dir,
-                       len_title_code_ym_dir, len_title_code_ymd_dir]:
-        out_dir = target_output_subdir(full_path, len_subdir, output_dir)
-        if not os.path.isdir(out_dir):
-            len_path = stub_length + len_subdir - len_title_code
 
-            # If the full_path matches a subday pattern and the day
-            # subdir is to be copied, extend the length of the 'copy from'
-            # path by the length of the subscript.
-            if len_subdir == 16:
-                if (service_subday_pattern.search(full_path) or
-                        master_subday_pattern.search(full_path)):
-                    len_path += len_subday_subscript
+    # Iterate over these subdirectory suffixes in order of increasing length and
+    # handle the case where the target subdirectory does not yet exist.
+    else:
+        for len_subdir in [len_title_code_dir, len_title_code_y_dir,
+                           len_title_code_ym_dir, len_title_code_ymd_dir]:
 
-            return full_path[:len_path], out_dir
+            # Get the target output directory for this file (full_path) assuming
+            # the current subdirectory depth.
+            out_dir = target_output_subdir(full_path, len_subdir, output_dir)
+
+            # If that target subdirectory doesn't already exist...
+            if not os.path.isdir(out_dir):
+                # ...then that's the part of the full_path that can be handled.
+                len_path = stub_length + len_subdir - len_title_code
+
+                # Handle the case where the path matches the subday pattern.
+                # If the full_path matches a subday pattern and the day
+                # subdir is to be copied, extend the length of the 'copy from'
+                # path by the length of the subscript.
+                if len_subdir == len_title_code_ymd_dir:
+                    if (service_subday_pattern.search(full_path) or
+                            master_subday_pattern.search(full_path)):
+                        len_path += len_subday_subscript
+
+                return full_path[:len_path], out_dir
 
     # If the target subdirectory exists, but not the file, then we can copy
     # only the file itself, unless a file with the same name alredy exists.
@@ -277,7 +302,8 @@ def determine_from_to(full_path, stub_length, output_dir):
     if not os.path.isfile(target_file):
         return full_path, out_dir
 
-    # If a matching file already exists, return None for the
+    # If a matching file already exists, return None to indicate that no
+    # files can be handled in a copy operation.
     return None, target_file
 
 
@@ -381,11 +407,10 @@ def standardise_output_dirs(output_subdir):
 
             remove_subday_subdir(subdir)
 
-        # TODO:
-        # If 'LSIDY' pattern matches, ... (TBD)
-        if lsidy_pattern.search(subdir):
+        # No standardisation needed in the case of lsidyv files.
+        if lsidyv_pattern.search(subdir):
             raise NotImplementedError(
-                "Standardisation of 'LSIDY' directories not yet implemented")
+                "Standardisation of 'LSIDYV' directories implemented")
 
     # Check that the new subdirectory structure is standard.
     unique_leaf_subdirs = list(
@@ -487,6 +512,13 @@ def standardised_output_subdir(full_path):
         # If the directory pattern matches, extract the standardised path.
         s = pattern.search(full_path)
         if s:
+            if pattern == lsidyv_pattern:
+                # Handle the lsidvy pattern by inspecting the filename.
+                filename = os.path.basename(full_path)
+                title_code, year, month = filename.split('-')[:3]
+                day = filename.split('-')[-1].split('.')[0][:len_day]
+                return os.path.join(title_code.upper(), year, month, day, '')
+
             return (s.group(1) + s.group(2)).upper()
 
     # If no match is found, raise an error.
@@ -531,10 +563,16 @@ def extract_pattern_stubs(pattern, paths):
     Returns: a list of strings, one stub for each of the given paths.
     """
 
-    # Match on the directory pattern (title code and subdirectories thereof)
-    # but extract only the initial part of the path (up to & including the title code).
-    ret = [str[0:m.start() + len_title_code]
-           for str in paths if (m := pattern.search(str))]
+    if pattern == lsidyv_pattern:
+        # Handle the lsidyv pattern.
+        ret = [str[0:m.end()] for str in paths if (m := pattern.search(str))]
+    else:
+        # Match on the directory pattern (title code & subdirectories thereof)
+        # but extract only the initial part of the path (up to & including the
+        # title code).
+        ret = [str[0:m.start() + len_title_code]
+               for str in paths if (m := pattern.search(str))]
+
     logging.info(
         f"Found {len(ret)} files matching the {pattern.pattern} pattern.")
     return ret
@@ -701,7 +739,7 @@ def move_from_to(from_dir, to_dir):
     # If the target directory does not already exist, create it.
     if not os.path.exists(to_dir):
         Path(to_dir).mkdir(parents=False, exist_ok=True)
-        logging.info(f"Created non-subscripted subdirectory at {to_dir}")
+        logging.info(f"Created subdirectory at {to_dir}")
 
     for f in list_all_files(from_dir):
         move(f, to_dir)
