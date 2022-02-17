@@ -122,12 +122,12 @@ def test_count_matches_in_list():
 def test_target_output_subdir():
 
     # TODO: test with each type of path (i.e. matching each directory pattern)
+    output_dir = '/home/output/'
 
     #
     # Test with a full path matching the P_SERVICE pattern.
     #
     full_path = '/data/JISC/JISC1_VOL4_C1/042/0002_Job2001-final delivery  12$17$2006 at 2$48 PM/0001_$$Fileserver8$disk19$tape/2001-0274/Delivery/WO1/BDPO/1894/11/07/service/WO1_BDPO_1894_11_07-0008-054.xml'
-    output_dir = '/home/output/'
 
     # If the suffix length is that of the title code subdirectory, then the output
     # target subdirectory is the output directory plus the title code directory.
@@ -158,7 +158,6 @@ def test_target_output_subdir():
     # Test with a full path matching the P_SERVICE_SUBDAY pattern.
     #
     full_path = '/data/JISC/JISC1/JISC2_VOL1_C0/097/2001-0346/WO1/LEMR/1873/01/04_S/service/WO1_LEMR_1873_01_04_S-0001.xml'
-    output_dir = '/home/output/'
 
     # If the suffix length is that of the title code subdirectory, then the output
     # target subdirectory is the output directory plus the title code directory.
@@ -184,6 +183,16 @@ def test_target_output_subdir():
     actual = target_output_subdir(full_path, len_subdir, output_dir)
     expected = output_dir
     assert actual == output_dir + 'LEMR/' + '1873/' + '01/' + '04/'
+
+    #
+    # Test with a full path matching the P_LSIDYV pattern.
+    #
+    full_path = '/data/JISC/JISC2/lsidyv100b3f/MOPT-1863-02-16.xml'
+
+    len_subdir = len('ABCD/1999/00/00/')
+    actual = target_output_subdir(full_path, len_subdir, output_dir)
+    expected = output_dir
+    assert actual == output_dir + 'MOPT/' + '1863/' + '02/' + '16/'
 
 
 def test_standardised_output_subdir():
