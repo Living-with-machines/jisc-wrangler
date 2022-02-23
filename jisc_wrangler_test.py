@@ -394,3 +394,78 @@ def test_alt_output_file():
     actual = alt_output_file(file_path)
 
     assert actual == expected
+
+
+def test_title_code_to_nlp():
+
+    title_code = "ANJO"
+    year = "1876"
+    month = "08"
+    day = "22"
+    expected = "0000031"
+
+    assert title_code_to_nlp(title_code, year, month, day) == expected
+
+    title_code = "ANJO"
+    year = "1876"
+    month = "08"
+    day = "24"
+    expected = "0000032"
+
+    assert title_code_to_nlp(title_code, year, month, day) == expected
+
+    title_code = "COGE"
+    year = "1803"
+    month = "07"
+    day = "01"
+    expected = None
+
+    assert title_code_to_nlp(title_code, year, month) == expected
+
+    title_code = "COGE"
+    year = "1803"
+    month = "07"
+    day = "02"
+    expected = "0000179"
+
+    assert title_code_to_nlp(title_code, year, month) == expected
+
+    title_code = "COGE"
+    year = "1810"
+    month = "07"
+    day = "02"
+    expected = None
+
+    assert title_code_to_nlp(title_code, year, month) == expected
+
+    title_code = "COGE"
+    year = "1811"
+    month = "03"
+    day = "16"
+    expected = "0000177"
+
+    assert title_code_to_nlp(title_code, year, month) == expected
+
+    title_code = "COGE"
+    year = "1835"
+    month = "08"
+    day = "29"
+    expected = "0000177"
+
+    assert title_code_to_nlp(title_code, year, month) == expected
+
+    title_code = "COGE"
+    year = "1835"
+    month = "09"
+    day = "29"
+    expected = "0000178"
+
+    assert title_code_to_nlp(title_code, year, month) == expected
+
+    title_code = "COGE"
+    year = "1888"
+    month = "08"
+    day = "29"
+    expected = "0000180"
+
+    assert title_code_to_nlp(title_code, year, month) == expected
