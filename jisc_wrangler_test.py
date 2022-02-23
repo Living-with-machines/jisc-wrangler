@@ -396,7 +396,61 @@ def test_alt_output_file():
     assert actual == expected
 
 
+def test_read_title_code_lookup_file():
+
+    lookup = read_title_code_lookup_file()
+
+    assert isinstance(lookup, dict)
+    assert "ANJO" in lookup
+
+    # Two lines in the lookup table for "ANJO"
+    assert isinstance(lookup["ANJO"], list)
+    assert len(lookup["ANJO"]) == 2
+
+    # First line for "ANJO" is for 01/01/1800 to 23/08/1876 with NLP 31.
+    assert isinstance(lookup["ANJO"][0], tuple)
+    assert len(lookup["ANJO"][0]) == 2
+
+    # This is the date range.
+    assert isinstance(lookup["ANJO"][0][0], tuple)
+    assert len(lookup["ANJO"][0][0]) == 2
+
+    assert lookup["ANJO"][0][0][0] == datetime.strptime(
+        "01-Jan-1800", "%d-%b-%Y")
+    assert lookup["ANJO"][0][0][1] == datetime.strptime(
+        "23-Aug-1876", "%d-%b-%Y")
+
+    # This is the NLP code.
+    assert isinstance(lookup["ANJO"][0][1], str)
+    assert lookup["ANJO"][0][1] == "0000031"
+
+    assert "SNSR" in lookup
+
+    # One line in the lookup table for "SNSR"
+    assert isinstance(lookup["SNSR"], list)
+    assert len(lookup["SNSR"]) == 1
+
+    # Single line for "SNSR" is for 19/01/1840 to 12/07/1840 with NLP 97.
+    assert isinstance(lookup["SNSR"][0], tuple)
+    assert len(lookup["SNSR"][0]) == 2
+
+    # This is the date range.
+    assert isinstance(lookup["SNSR"][0][0], tuple)
+    assert len(lookup["SNSR"][0][0]) == 2
+
+    assert lookup["SNSR"][0][0][0] == datetime.strptime(
+        "19-Jan-1840", "%d-%b-%Y")
+    assert lookup["SNSR"][0][0][1] == datetime.strptime(
+        "12-Jul-1840", "%d-%b-%Y")
+
+    # This is the NLP code.
+    assert isinstance(lookup["SNSR"][0][1], str)
+    assert lookup["SNSR"][0][1] == "0000097"
+
+
 def test_title_code_to_nlp():
+
+    lookup = read_title_code_lookup_file()
 
     title_code = "ANJO"
     year = "1876"
@@ -404,15 +458,39 @@ def test_title_code_to_nlp():
     day = "22"
     expected = "0000031"
 
-    assert title_code_to_nlp(title_code, year, month, day) == expected
+    assert title_code_to_nlp(title_code, year, month, day, lookup) == expected
 
     title_code = "ANJO"
     year = "1876"
     month = "08"
     day = "24"
+    expected = None
+
+    assert title_code_to_nlp(title_code, year, month, day, lookup) == expected
+
+    title_code = "ANJO"
+    year = "1876"
+    month = "08"
+    day = "30"
     expected = "0000032"
 
-    assert title_code_to_nlp(title_code, year, month, day) == expected
+    assert title_code_to_nlp(title_code, year, month, day, lookup) == expected
+
+    title_code = "ANJO"
+    year = "1900"
+    month = "12"
+    day = "31"
+    expected = "0000032"
+
+    assert title_code_to_nlp(title_code, year, month, day, lookup) == expected
+
+    title_code = "ANJO"
+    year = "1901"
+    month = "01"
+    day = "01"
+    expected = None
+
+    assert title_code_to_nlp(title_code, year, month, day, lookup) == expected
 
     title_code = "COGE"
     year = "1803"
@@ -420,7 +498,7 @@ def test_title_code_to_nlp():
     day = "01"
     expected = None
 
-    assert title_code_to_nlp(title_code, year, month) == expected
+    assert title_code_to_nlp(title_code, year, month, day, lookup) == expected
 
     title_code = "COGE"
     year = "1803"
@@ -428,7 +506,7 @@ def test_title_code_to_nlp():
     day = "02"
     expected = "0000179"
 
-    assert title_code_to_nlp(title_code, year, month) == expected
+    assert title_code_to_nlp(title_code, year, month, day, lookup) == expected
 
     title_code = "COGE"
     year = "1810"
@@ -436,7 +514,7 @@ def test_title_code_to_nlp():
     day = "02"
     expected = None
 
-    assert title_code_to_nlp(title_code, year, month) == expected
+    assert title_code_to_nlp(title_code, year, month, day, lookup) == expected
 
     title_code = "COGE"
     year = "1811"
@@ -444,7 +522,7 @@ def test_title_code_to_nlp():
     day = "16"
     expected = "0000177"
 
-    assert title_code_to_nlp(title_code, year, month) == expected
+    assert title_code_to_nlp(title_code, year, month, day, lookup) == expected
 
     title_code = "COGE"
     year = "1835"
@@ -452,7 +530,7 @@ def test_title_code_to_nlp():
     day = "29"
     expected = "0000177"
 
-    assert title_code_to_nlp(title_code, year, month) == expected
+    assert title_code_to_nlp(title_code, year, month, day, lookup) == expected
 
     title_code = "COGE"
     year = "1835"
@@ -460,7 +538,7 @@ def test_title_code_to_nlp():
     day = "29"
     expected = "0000178"
 
-    assert title_code_to_nlp(title_code, year, month) == expected
+    assert title_code_to_nlp(title_code, year, month, day, lookup) == expected
 
     title_code = "COGE"
     year = "1888"
@@ -468,4 +546,4 @@ def test_title_code_to_nlp():
     day = "29"
     expected = "0000180"
 
-    assert title_code_to_nlp(title_code, year, month) == expected
+    assert title_code_to_nlp(title_code, year, month, day, lookup) == expected
