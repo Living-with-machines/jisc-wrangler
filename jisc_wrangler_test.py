@@ -13,8 +13,8 @@ stubs = ['/data/JISC/JISC1_VOL4_C1/042/0002_Job2001-final delivery  12$17$2006 a
          '/data/JISC/JISC1_VOL1_C0/009/Data/Job-2001/Batch_0162/2001-0162/WO1/RDNP',
          '/data/JISC/JISC1_VOL1_C0/009/Data/Job-2001/Batch_0162/2001-0162/WO1/RDNP',
          '/data/JISC/JISC1/JISC2_VOL1_C0/097/2001-0346/WO1/LEMR',
-         '/data/JISC/JISC2/lsidyv10001b/MOPT',
-         '/data/JISC/JISC2/lsidyvfd9b/IMTS']
+         '/data/JISC/JISC2/lsidyv10001b/MOPT-',
+         '/data/JISC/JISC2/lsidyvfd9b/IMTS-']
 
 
 def test_list_all_files(fs):
@@ -69,7 +69,7 @@ def test_extract_pattern_stubs():
     actual = extract_pattern_stubs(service_subday_pattern, paths)
     assert actual == stubs[4:5]
 
-    # The sixth path matches the P_LSIDYV pattern.
+    # The sixth & seventh paths match the P_LSIDYV pattern.
     actual = extract_pattern_stubs(lsidyv_pattern, paths)
     assert actual == stubs[5:7]
 
