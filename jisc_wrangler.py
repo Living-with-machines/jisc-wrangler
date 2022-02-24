@@ -20,8 +20,9 @@ import csv
 __version__ = '0.0.1'
 
 # Regex patterns for INPUT DIRECTORIES:
-# These should be exhaustive when used case-insenstively (grep -E -i).
-# Parts in parentheses are the corresponding standardised output paths.
+# These should be mutually exclusive and exhaustive when used
+# case-insenstively (grep -E -i). Parts in parentheses are the
+# corresponding standardised output paths.
 P_SERVICE = os.path.join(
     '([A-Z]{4}', '[0-9]{4}', '[0-9]{2}', '[0-9]{2})(', ')service', '')
 P_MASTER = os.path.join(
@@ -32,6 +33,8 @@ P_SERVICE_SUBDAY = os.path.join('([A-Z]{4}', '[0-9]{4}', '[0-9]{2}',
 P_MASTER_SUBDAY = os.path.join('([A-Z]{4}', '[0-9]{4}', '[0-9]{2}',
                                '[0-9]{2})' + P_SUBDAY + '(', ')master', '')
 P_LSIDYV = os.path.join('lsidyv[a-z0-9]{4}[a-z0-9]?[a-z0-9]?', '[A-Z]{4}-')
+P_LSIDYV_LAGER = os.path.join(
+    'lsidyv[a-z0-9]{4}[a-z0-9]?[a-z0-9]?', '[A-Z]{5}-')
 P_OSMAPS = os.path.join('OSMaps.*?(\\.shp|', 'metadata)\\.xml$')
 
 service_pattern = compile(P_SERVICE, IGNORECASE)
@@ -39,6 +42,7 @@ service_subday_pattern = compile(P_SERVICE_SUBDAY, IGNORECASE)
 master_pattern = compile(P_MASTER, IGNORECASE)
 master_subday_pattern = compile(P_MASTER_SUBDAY, IGNORECASE)
 lsidyv_pattern = compile(P_LSIDYV)
+lsidyv_lager_pattern = compile(P_LSIDYV_LAGER)
 os_maps_pattern = compile(P_OSMAPS)
 
 dir_patterns = [service_pattern, service_subday_pattern, master_pattern,
@@ -576,7 +580,7 @@ def extract_pattern_stubs(pattern, paths):
     Returns: a list of strings, one stub for each of the given paths.
     """
 
-    if pattern == lsidyv_pattern:
+    if pattern == lsidyv_pattern or pattern == lsidyv_lager_pattern:
         # Handle the lsidyv pattern.
         ret = [str[0:m.end()] for str in paths if (m := pattern.search(str))]
     else:
