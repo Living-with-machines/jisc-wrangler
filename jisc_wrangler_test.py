@@ -549,6 +549,38 @@ def test_title_code_to_nlp():
 
     assert title_code_to_nlp(title_code, year, month, day, lookup) == expected
 
+    title_code = "IPJO"
+    year = "1800"
+    month = "12"
+    day = "27"
+    expected = "0000071"
+
+    assert title_code_to_nlp(title_code, year, month, day, lookup) == expected
+
+    title_code = "IPJL"
+    year = "1800"
+    month = "12"
+    day = "27"
+    expected = "0000071"
+
+    assert title_code_to_nlp(title_code, year, month, day, lookup) == expected
+
+    title_code = "LAGE"
+    year = "1892"
+    month = "12"
+    day = "31"
+    expected = "0000488"
+
+    assert title_code_to_nlp(title_code, year, month, day, lookup) == expected
+
+    title_code = "LAGER"
+    year = "1892"
+    month = "12"
+    day = "31"
+    expected = "0000488"
+
+    assert title_code_to_nlp(title_code, year, month, day, lookup) == expected
+
 
 def test_fix_title_code_anomaly():
 
