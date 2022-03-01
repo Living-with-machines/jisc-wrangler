@@ -1,4 +1,5 @@
 from jisc_wrangler import *
+from pytest import raises
 from unittest.mock import create_autospec
 
 paths = ['/data/JISC/JISC1_VOL4_C1/042/0002_Job2001-final delivery  12$17$2006 at 2$48 PM/0001_$$Fileserver8$disk19$tape/2001-0274/Delivery/WO1/BDPO/1894/11/07/service/WO1_BDPO_1894_11_07-0008-054.xml',
@@ -13,8 +14,8 @@ stubs = ['/data/JISC/JISC1_VOL4_C1/042/0002_Job2001-final delivery  12$17$2006 a
          '/data/JISC/JISC1_VOL1_C0/009/Data/Job-2001/Batch_0162/2001-0162/WO1/RDNP',
          '/data/JISC/JISC1_VOL1_C0/009/Data/Job-2001/Batch_0162/2001-0162/WO1/RDNP',
          '/data/JISC/JISC1/JISC2_VOL1_C0/097/2001-0346/WO1/LEMR',
-         '/data/JISC/JISC2/lsidyv10001b/MOPT',
-         '/data/JISC/JISC2/lsidyvfd9b/IMTS']
+         '/data/JISC/JISC2/lsidyv10001b/MOPT-',
+         '/data/JISC/JISC2/lsidyvfd9b/IMTS-']
 
 
 def test_list_all_files(fs):
@@ -69,7 +70,7 @@ def test_extract_pattern_stubs():
     actual = extract_pattern_stubs(service_subday_pattern, paths)
     assert actual == stubs[4:5]
 
-    # The sixth path matches the P_LSIDYV pattern.
+    # The sixth & seventh paths match the P_LSIDYV pattern.
     actual = extract_pattern_stubs(lsidyv_pattern, paths)
     assert actual == stubs[5:7]
 
@@ -80,7 +81,7 @@ def test_extract_pattern_stubs():
 
 def test_count_matches_in_list():
 
-    l = paths
+    l = paths.copy()
 
     # This prefix is common to all of the paths.
     p = '/data/JISC/JISC1'
@@ -547,3 +548,45 @@ def test_title_code_to_nlp():
     expected = "0000180"
 
     assert title_code_to_nlp(title_code, year, month, day, lookup) == expected
+
+
+def test_fix_title_code_anomaly():
+
+    path = '/data/JISC/JISC2/lsidyv785a3/LAGER-1892-12-31_mets.xml'
+    expected = '/data/JISC/JISC2/lsidyv785a3/LAGE-1892-12-31_mets.xml'
+
+    actual = fix_title_code_anomaly(path)
+
+    assert actual == expected
+
+    # The path variable has not changed.
+    assert path == '/data/JISC/JISC2/lsidyv785a3/LAGER-1892-12-31_mets.xml'
+
+    non_anomalous_path = '/data/JISC/JISC2/lsidyv10001b/MOPT-1861-12-05.xml'
+    with raises(ValueError):
+        fix_title_code_anomaly(non_anomalous_path)
+
+
+def test_fix_anomalous_title_codes(fs):
+
+    # Add an anomalous path to the list.
+    paths_plus_one = paths.copy()
+    paths_plus_one.append(
+        '/data/JISC/JISC2/lsidyv785a3/LAGER-1892-12-31_mets.xml')
+    expected = ['/data/JISC/JISC2/lsidyv785a3/LAGE-1892-12-31_mets.xml']
+
+    # Use pyfakefs to fake the filesystem
+    for path in paths_plus_one:
+        fs.create_file(path)
+
+    fix_anomalous_title_codes(paths_plus_one)
+
+    # All except the last (anomalous) one are unchanged.
+    assert paths_plus_one[:-1] == paths
+    assert paths_plus_one[-1:] == expected
+
+    # Check that the files have been renamed.
+    filenames = list_all_files('/data/')
+
+    assert filenames[:-1] == paths
+    assert filenames[-1:] == expected

@@ -20,8 +20,9 @@ import csv
 __version__ = '0.0.1'
 
 # Regex patterns for INPUT DIRECTORIES:
-# These should be exhaustive when used case-insenstively (grep -E -i).
-# Parts in parentheses are the corresponding standardised output paths.
+# These should be mutually exclusive and exhaustive when used
+# case-insenstively (grep -E -i). Parts in parentheses are the
+# corresponding standardised output paths.
 P_SERVICE = os.path.join(
     '([A-Z]{4}', '[0-9]{4}', '[0-9]{2}', '[0-9]{2})(', ')service', '')
 P_MASTER = os.path.join(
@@ -31,7 +32,9 @@ P_SERVICE_SUBDAY = os.path.join('([A-Z]{4}', '[0-9]{4}', '[0-9]{2}',
                                 '[0-9]{2})' + P_SUBDAY + '(', ')service', '')
 P_MASTER_SUBDAY = os.path.join('([A-Z]{4}', '[0-9]{4}', '[0-9]{2}',
                                '[0-9]{2})' + P_SUBDAY + '(', ')master', '')
-P_LSIDYV = os.path.join('lsidyv[a-z0-9]{4}[a-z0-9]?[a-z0-9]?', '[A-Z]{4}')
+P_LSIDYV = os.path.join('lsidyv[a-z0-9]{4}[a-z0-9]?[a-z0-9]?', '[A-Z]{4}-')
+P_LSIDYV_ANOMALY = os.path.join(
+    'lsidyv[a-z0-9]{4}[a-z0-9]?[a-z0-9]?', '[A-Z]{5}-')
 P_OSMAPS = os.path.join('OSMaps.*?(\\.shp|', 'metadata)\\.xml$')
 
 service_pattern = compile(P_SERVICE, IGNORECASE)
@@ -39,8 +42,10 @@ service_subday_pattern = compile(P_SERVICE_SUBDAY, IGNORECASE)
 master_pattern = compile(P_MASTER, IGNORECASE)
 master_subday_pattern = compile(P_MASTER_SUBDAY, IGNORECASE)
 lsidyv_pattern = compile(P_LSIDYV)
+lsidyv_anomaly_pattern = compile(P_LSIDYV_ANOMALY)
 os_maps_pattern = compile(P_OSMAPS)
 
+# Do *not* include the anomalous pattern here.
 dir_patterns = [service_pattern, service_subday_pattern, master_pattern,
                 master_subday_pattern, lsidyv_pattern, os_maps_pattern]
 
@@ -115,6 +120,10 @@ def process_inputs(args):
     # Look at the input file paths & extract the 'stubs'.
     all_files = list_all_files(args.input_dir, sorted=True)
     logging.info(f"Found {len(all_files)} input files.")
+
+    # Preprocess P_LSIDYV_ANOMALY files to correct the anomalous title code.
+    fix_anomalous_title_codes(all_files)
+
     all_stubs = extract_file_path_stubs(
         all_files, args.working_dir, sorted=True)
 
@@ -589,6 +598,32 @@ def extract_pattern_stubs(pattern, paths):
     logging.info(
         f"Found {len(ret)} files matching the {pattern.pattern} pattern.")
     return ret
+
+
+def fix_anomalous_title_codes(paths):
+    """Correct the anomalous title codes in list and on disk."""
+
+    count = 0
+    for i in range(0, len(paths)):
+        path = paths[i]
+        if lsidyv_anomaly_pattern.search(path):
+            new_path = fix_title_code_anomaly(path)
+            # Update the paths list element to correct the anomaly.
+            paths[i] = new_path
+            # Rename the file on disk.
+            os.rename(path, new_path)
+            logging.debug(f"Fixed anomalous path {path} to {new_path}")
+            count += 1
+
+    logging.info(f"Fixed {count} anomalous paths.")
+
+
+def fix_title_code_anomaly(path):
+
+    m = lsidyv_anomaly_pattern.search(path)
+    if not m:
+        raise ValueError(f"Anomalous title code not found in {path}")
+    return path[0:m.end()-2] + path[m.end()-1:]
 
 
 def validate(num_existing_output_files, args):
