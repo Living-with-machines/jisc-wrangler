@@ -1,3 +1,4 @@
+from cmath import exp
 from jisc_wrangler import *
 from pytest import raises
 from unittest.mock import create_autospec
@@ -584,10 +585,11 @@ def test_title_code_to_nlp():
 
 def test_fix_title_code_anomaly():
 
+    working_dir = '/home/working_dir/'
     path = '/data/JISC/JISC2/lsidyv785a3/LAGER-1892-12-31_mets.xml'
-    expected = '/data/JISC/JISC2/lsidyv785a3/LAGE-1892-12-31_mets.xml'
+    expected = working_dir + 'lsidyv785a3/LAGE-1892-12-31_mets.xml'
 
-    actual = fix_title_code_anomaly(path)
+    actual = fix_title_code_anomaly(path, working_dir)
 
     assert actual == expected
 
@@ -596,29 +598,42 @@ def test_fix_title_code_anomaly():
 
     non_anomalous_path = '/data/JISC/JISC2/lsidyv10001b/MOPT-1861-12-05.xml'
     with raises(ValueError):
-        fix_title_code_anomaly(non_anomalous_path)
+        fix_title_code_anomaly(non_anomalous_path, working_dir)
 
 
 def test_fix_anomalous_title_codes(fs):
 
+    # Use pyfakefs to fake the filesystem
+    working_dir = '/home/working_dir/'
+    fs.create_dir(working_dir)
+
     # Add an anomalous path to the list.
     paths_plus_one = paths.copy()
-    paths_plus_one.append(
-        '/data/JISC/JISC2/lsidyv785a3/LAGER-1892-12-31_mets.xml')
-    expected = ['/data/JISC/JISC2/lsidyv785a3/LAGE-1892-12-31_mets.xml']
+    anomalous_path = '/data/JISC/JISC2/lsidyv785a3/LAGER-1892-12-31_mets.xml'
+    paths_plus_one.append(anomalous_path)
+    expected = working_dir + 'lsidyv785a3/LAGE-1892-12-31_mets.xml'
 
     # Use pyfakefs to fake the filesystem
     for path in paths_plus_one:
         fs.create_file(path)
 
-    fix_anomalous_title_codes(paths_plus_one)
+    fix_anomalous_title_codes(paths_plus_one, working_dir)
 
     # All except the last (anomalous) one are unchanged.
     assert paths_plus_one[:-1] == paths
-    assert paths_plus_one[-1:] == expected
+    assert paths_plus_one[-1] == expected
 
-    # Check that the files have been renamed.
-    filenames = list_all_files('/data/')
+    # Check that the anomalous file has been copied and renamed.
+    files_in_input_dir = list_all_files('/data/')
 
-    assert filenames[:-1] == paths
-    assert filenames[-1:] == expected
+    assert len(files_in_input_dir) == len(paths_plus_one)
+    assert files_in_input_dir[:-1] == paths_plus_one[:-1]
+
+    # The original anomalous file remains.
+    assert files_in_input_dir[-1] == anomalous_path
+
+    files_in_working_dir = list_all_files(working_dir)
+
+    # The title code in the file copied to the working directory has been fixed.
+    assert len(files_in_working_dir) == 1
+    assert files_in_working_dir[0] == expected
