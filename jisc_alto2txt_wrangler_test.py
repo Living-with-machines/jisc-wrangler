@@ -48,10 +48,13 @@ def test_replace_publication_id(xml_tree):
     lookup = read_title_code_lookup_file()
     result = replace_publication_id(xml_tree, lookup)
 
-    # After replacement the publication id is "0000095"
-    assert len(result.findall(publication_element_name)) == 1
-    assert result.find(publication_element_name).attrib[
+    # After replacement the publication id in the XML tree is "0000095"
+    assert len(xml_tree.findall(publication_element_name)) == 1
+    assert xml_tree.find(publication_element_name).attrib[
         publication_id_attribute_name] == "0000095"
+
+    # The return value is the publication id:
+    assert result == ("RDNP", "0000095")
 
 
 def test_read_title_code_lookup_file():

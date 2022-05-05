@@ -672,7 +672,7 @@ def flatten(nested_list):
 
 
 def list_all_files(dir, sorted=False):
-    """List all of all files under a given directory, recursively.
+    """List all of the files under a given directory, recursively.
 
     Returns: a list of strings, optionally sorted.
     """
