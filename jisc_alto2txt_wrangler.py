@@ -22,6 +22,7 @@ import argparse
 from datetime import datetime
 import csv
 import xml.etree.ElementTree as ET
+from tqdm import tqdm  # type: ignore
 from jisc_wrangler import __version__
 
 # Constants
@@ -83,9 +84,11 @@ def process_inputs(args):
 
     logging.info(f"Found {len(metadata_files)} metadata files.")
 
-    failure_count = 0
+    # Print the number of files to be processed (and a progress bar).
+    print(f"Processing {len(metadata_files)} metadata files")
 
-    for file in metadata_files:
+    failure_count = 0
+    for file in tqdm(metadata_files):
 
         logging.debug(f"Processing file {file}")
 
