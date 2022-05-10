@@ -100,7 +100,7 @@ def process_inputs(args):
         title_code, nlp = replace_publication_id(xml_tree, lookup)
 
         # If the publication code replacement failed, skip this file.
-        if title_code is None:
+        if title_code is None or nlp is None:
             logging.warning(
                 f"Skipping file {file} & associated plaintext file")
             continue
@@ -190,24 +190,28 @@ def replace_publication_id(xml_tree, lookup):
     pub_elem = xml_tree.find(publication_element_name)
 
     if pub_elem is None:
-        logging.warning(f"Failed to find publication element in XML tree.")
+        logging.warning("Failed to find publication element in XML tree.")
         return None, None
 
     title_code = pub_elem.attrib[publication_id_attribute_name]
     if title_code is None:
-        logging.warning(f"Failed to find title code attribute in XML tree.")
+        logging.warning("Failed to find title code attribute in XML tree.")
         return None, None
 
     date_str = pub_elem.find(issue_element_name +
                              "/" + date_element_name).text
     if date_str is None:
-        logging.warning(f"Failed to find issue/date element in XML tree.")
+        logging.warning("Failed to find issue/date element in XML tree.")
         return None, None
 
     year, month, day = parse_publicaton_date(date_str)
 
     nlp = title_code_to_nlp(
         title_code, year, month, day, lookup)
+
+    if nlp is None:
+        logging.warning(f"Failed to get NLP for title code {title_code}")
+        return None, None
 
     try:
         pub_elem.set(publication_id_attribute_name, nlp)
@@ -240,8 +244,9 @@ def title_code_to_nlp(title_code, year, month, day, lookup):
              or None if the NLP code is not available.
     """
 
-    code_lookup = lookup[title_code]
+    code_lookup = lookup.get(title_code)
     if not code_lookup:
+        logging.warning(f"Title code {title_code} not found in lookup table.")
         return None
 
     date = datetime.strptime(day + '-' + month + '-' + year, "%d-%m-%Y")
@@ -250,6 +255,8 @@ def title_code_to_nlp(title_code, year, month, day, lookup):
         if date_in_range(date_range[0], date_range[1], date):
             return entry[1]
 
+    logging.warning(
+        f"Date out of range for title code {title_code} in lookup table.")
     return None
 
 
