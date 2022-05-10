@@ -99,6 +99,12 @@ def process_inputs(args):
         # in the metadata XML.
         title_code, nlp = replace_publication_id(xml_tree, lookup)
 
+        # If the publication code replacement failed, skip this file.
+        if title_code is None:
+            logging.warning(
+                f"Skipping file {file} & associated plaintext file")
+            continue
+
         # Construct the output file path.
         output_file = file.replace(args.input_dir, args.output_dir, 1)
 
@@ -181,23 +187,34 @@ def replace_publication_id(xml_tree, lookup):
     Returns: the 7-digit NLP code.
     """
 
+    pub_elem = xml_tree.find(publication_element_name)
+
+    if pub_elem is None:
+        logging.warning(f"Failed to find publication element in XML tree.")
+        return None, None
+
+    title_code = pub_elem.attrib[publication_id_attribute_name]
+    if title_code is None:
+        logging.warning(f"Failed to find title code attribute in XML tree.")
+        return None, None
+
+    date_str = pub_elem.find(issue_element_name +
+                             "/" + date_element_name).text
+    if date_str is None:
+        logging.warning(f"Failed to find issue/date element in XML tree.")
+        return None, None
+
+    year, month, day = parse_publicaton_date(date_str)
+
+    nlp = title_code_to_nlp(
+        title_code, year, month, day, lookup)
+
     try:
-        pub_elem = xml_tree.find(publication_element_name)
-        title_code = pub_elem.attrib[publication_id_attribute_name]
-
-        date_str = pub_elem.find(issue_element_name +
-                                 "/" + date_element_name).text
-        year, month, day = parse_publicaton_date(date_str)
-
-        nlp = title_code_to_nlp(
-            title_code, year, month, day, lookup)
-
         pub_elem.set(publication_id_attribute_name, nlp)
-
     except Exception as e:
-        print(f"Failed to replace publication id.")
+        print(f"Failed to set publication element in XML tree.")
         print(f"ERROR: {str(e)}")
-        exit()
+        return None, None
 
     return title_code, nlp
 
