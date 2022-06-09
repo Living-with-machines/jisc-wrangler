@@ -232,23 +232,22 @@ def replace_publication_id(xml_tree, lookup):
 def standardise_title_code(title_code, xml_tree):
     """Standardise a non-standard JISC title code.
 
-    Handles non-standard title codes observed in the JISC source data
-    on a case-by-case basis.
+    Handles non-standard title codes observed in the JISC source data.
 
     Args:
-        title_code  (str): A 4-character or non-standard JISC title code.
+        title_code  (str): A non-standard JISC title code.
         xml_tree    (str): An XML ElementTree.
 
     Returns: the corresponding standard title code or None if no
     standardisation is available.
     """
 
-    # Handle the specific case of code NCBL1023 in BLSD metadata.
-    if title_code == "NCBL1023":
+    # Handle the case of title codes of the form NCBLXXXX.
+    if title_code[0:4] == "NCBL":
 
+        # Extract the correct title code from the input subdirectory path.
         input_sub_path_elem = xml_tree.find(input_sub_path_element_name)
-        if input_sub_path_elem.text[0:4] == "BLSD":
-            return "BLSD"
+        return input_sub_path_elem.text[0:4]
 
     return None
 
