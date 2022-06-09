@@ -30,6 +30,7 @@ publication_element_name = 'publication'
 publication_id_attribute_name = 'id'
 issue_element_name = "issue"
 date_element_name = 'date'
+input_sub_path_element_name = './/input_sub_path'
 
 # Data.
 title_code_lookup_file = "data/title_code_lookup.csv"
@@ -184,7 +185,7 @@ def replace_publication_id(xml_tree, lookup):
         xml_tree    (str): An XML ElementTree.
         lookup     (dict): A dictionary for NLP code lookups.
 
-    Returns: the 7-digit NLP code.
+    Returns: a tuple of the 4-character title code & the 7-digit NLP code.
     """
 
     pub_elem = xml_tree.find(publication_element_name)
@@ -197,6 +198,11 @@ def replace_publication_id(xml_tree, lookup):
     if title_code is None:
         logging.warning("Failed to find title code attribute in XML tree.")
         return None, None
+    if not title_code in lookup:
+        title_code = standardise_title_code(title_code, xml_tree)
+        if title_code is None:
+            logging.warning("Failed to standardise title code.")
+            return None, None
 
     date_str = pub_elem.find(issue_element_name +
                              "/" + date_element_name).text
@@ -223,6 +229,30 @@ def replace_publication_id(xml_tree, lookup):
     return title_code, nlp
 
 
+def standardise_title_code(title_code, xml_tree):
+    """Standardise a non-standard JISC title code.
+
+    Handles non-standard title codes observed in the JISC source data
+    on a case-by-case basis.
+
+    Args:
+        title_code  (str): A 4-character or non-standard JISC title code.
+        xml_tree    (str): An XML ElementTree.
+
+    Returns: the corresponding standard title code or None if no
+    standardisation is available.
+    """
+
+    # Handle the specific case of code NCBL1023 in BLSD metadata.
+    if title_code == "NCBL1023":
+
+        input_sub_path_elem = xml_tree.find(input_sub_path_element_name)
+        if input_sub_path_elem.text[0:4] == "BLSD":
+            return "BLSD"
+
+    return None
+
+
 def parse_publicaton_date(date_str):
     """Parse a date string"""
 
@@ -231,10 +261,11 @@ def parse_publicaton_date(date_str):
 
 def title_code_to_nlp(title_code, year, month, day, lookup):
     """
-    Convert a 4-character title code to a 7-digit NLP code.
+    Convert a 4-character title code to a 7-digit NLP code. Also supports
+    non-standard title codes if found in the lookup table.
 
     Args:
-        title_code  (str): A 4-character JISC title code.
+        title_code  (str): A 4-character or JISC title code.
         year        (str): A publication year in YYYY format.
         month       (str): A publication month in MM format.
         day         (str): A publication day in DD format.

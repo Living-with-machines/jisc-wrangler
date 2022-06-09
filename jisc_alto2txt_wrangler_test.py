@@ -39,6 +39,40 @@ def xml_tree():
     return ET.fromstring(xml_string)
 
 
+@pytest.fixture
+def nonstandard_xml_tree():
+
+    xml_string = """<?xml version="1.0"?>
+        <lwm>
+        <process>
+            <lwm_tool>
+            <name>extract_text</name>
+            <version>0.3.0</version>
+            <source>https://github.com/alan-turing-institute/Living-with-Machines-code</source>
+            </lwm_tool>
+            <source_type>newspaper</source_type>
+            <xml_flavour>ukp</xml_flavour>
+            <input_sub_path>BLSD/1862/12/31</input_sub_path>
+            <input_filename>BLSD-1862-12-31.xml</input_filename>
+        </process>
+        <publication id="NCBL1023">
+            <issue id="1457">
+            <date>1862-12-31</date>
+            <item id="0001-001">
+                <plain_text_file>BLSD-1862-12-31-0001-001.txt</plain_text_file>
+                <title>Hit glMttom' SfStttltittiL</title>
+                <item_type>Article</item_type>
+                <word_count>37</word_count>
+                <ocr_quality>68.82</ocr_quality>
+            </item>
+            </issue>
+        </publication>
+        </lwm>
+        """
+
+    return ET.fromstring(xml_string)
+
+
 def test_replace_publication_id(xml_tree):
 
     # Initially the publication id is "RDNP"
@@ -57,6 +91,19 @@ def test_replace_publication_id(xml_tree):
     assert result == ("RDNP", "0000095")
 
 
+def test_standardise_title_code(nonstandard_xml_tree):
+
+    # Initially the publication id is "NCBL1023"
+    title_code = nonstandard_xml_tree.find(publication_element_name).attrib[
+        publication_id_attribute_name]
+    assert title_code == "NCBL1023"
+
+    result = standardise_title_code(title_code, nonstandard_xml_tree)
+
+    # The correct standardised code is "BLSD"
+    assert result == "BLSD"
+
+
 def test_read_title_code_lookup_file():
 
     lookup = read_title_code_lookup_file()
@@ -64,26 +111,26 @@ def test_read_title_code_lookup_file():
     assert isinstance(lookup, dict)
     assert "ANJO" in lookup
 
-    # Two lines in the lookup table for "ANJO"
+    # Three lines in the lookup table for "ANJO"
     assert isinstance(lookup["ANJO"], list)
-    assert len(lookup["ANJO"]) == 2
+    assert len(lookup["ANJO"]) == 3
 
-    # First line for "ANJO" is for 01/01/1800 to 23/08/1876 with NLP 31.
-    assert isinstance(lookup["ANJO"][0], tuple)
-    assert len(lookup["ANJO"][0]) == 2
+    # Second line for "ANJO" is for 01/01/1800 to 23/08/1876 with NLP 31.
+    assert isinstance(lookup["ANJO"][1], tuple)
+    assert len(lookup["ANJO"][1]) == 2
 
     # This is the date range.
-    assert isinstance(lookup["ANJO"][0][0], tuple)
-    assert len(lookup["ANJO"][0][0]) == 2
+    assert isinstance(lookup["ANJO"][1][0], tuple)
+    assert len(lookup["ANJO"][1][0]) == 2
 
-    assert lookup["ANJO"][0][0][0] == datetime.strptime(
+    assert lookup["ANJO"][1][0][0] == datetime.strptime(
         "01-Jan-1800", "%d-%b-%Y")
-    assert lookup["ANJO"][0][0][1] == datetime.strptime(
+    assert lookup["ANJO"][1][0][1] == datetime.strptime(
         "23-Aug-1876", "%d-%b-%Y")
 
     # This is the NLP code.
-    assert isinstance(lookup["ANJO"][0][1], str)
-    assert lookup["ANJO"][0][1] == "0000031"
+    assert isinstance(lookup["ANJO"][1][1], str)
+    assert lookup["ANJO"][1][1] == "0000031"
 
     assert "SNSR" in lookup
 
