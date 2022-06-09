@@ -107,7 +107,8 @@ def process_inputs(args):
             continue
 
         # Construct the output file path.
-        output_file = file.replace(args.input_dir, args.output_dir, 1)
+        output_file = file.replace(args.input_dir,
+                                   os.path.join(args.output_dir, ''), 1)
 
         # Write the modified XML tree to the output file.
         if not args.dry_run:
