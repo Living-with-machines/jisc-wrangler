@@ -247,6 +247,8 @@ def standardise_title_code(title_code, xml_tree):
 
         # Extract the correct title code from the input subdirectory path.
         input_sub_path_elem = xml_tree.find(input_sub_path_element_name)
+        logging.info(
+            f"Extracted title code from subdirectory path: {input_sub_path_elem.text}")
         return input_sub_path_elem.text[0:4]
 
     return None
