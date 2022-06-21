@@ -242,8 +242,8 @@ def standardise_title_code(title_code, xml_tree):
     standardisation is available.
     """
 
-    # Handle the case of title codes of the form NCBLXXXX.
-    if title_code[0:4] == "NCBL":
+    # Handle the case of title codes of the form NCBLXXXX or BL000X.
+    if title_code[0:4] == "NCBL" or title_code[0:5] == "BL000":
 
         # Extract the correct title code from the input subdirectory path.
         input_sub_path_elem = xml_tree.find(input_sub_path_element_name)
