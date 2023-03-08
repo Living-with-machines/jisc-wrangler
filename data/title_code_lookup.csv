@@ -1,4 +1,5 @@
 Abbr | NLP | Start | | | End | |
+ANJO | 31 | 2 | Jan | 1798 | 30 | Dec | 1799
 ANJO | 31 | 1 | Jan | 1800 | 23 | Aug | 1876
 ANJO | 32 | 30 | Aug | 1876 | 31 | Dec | 1900
 BNER | 36 | 4 | Mar | 1857 | 28 | Sep | 1859
@@ -25,18 +26,19 @@ BNPT | 156 | 7 | Jan | 1801 | 25 | Dec | 1900
 CNMR | 45 | 1 | Jan | 1800 | 27 | Aug | 1859
 CNMR | 46 | 29 | Aug | 1859 | 21 | Feb | 1860
 CNMR | 47 | 22 | Feb | 1860 | 20 | Apr | 1867
-CNMR | 45 | 28 | Apr | 1720 | 28 | Dec | 1799
+CNMR | 45 | 28 | Apr | 1720 | 30 | Dec | 1799
 CHPN | 41 | 18 | Sep | 1836 | 14 | Nov | 1836
 CHPN | 42 | 20 | Nov | 1836 | 26 | Apr | 1840
 CHTR | 43 | 27 | Jan | 1839 | 15 | Mar | 1840
 CHTT | 44 | 2 | Feb | 1839 | 7 | Jul | 1839
+CTCR | 48 | 16 | Aug | 1839 | 16 | Aug | 1839
 CTCR | 48 | 28 | Sep | 1839 | 18 | Sep | 1841
 CHOR | 158 | 15 | May | 1854 | 27 | Jun | 1863
 CHOR | 485 | 4 | July | 1863 | 28 | Jan | 1871
 CHOR | 157 | 4 | Feb | 1871 | 29 | Dec | 1900
 CWPR | 49 | 1 | Jan | 1802 | 3 | Mar | 1804
 CWPR | 50 | 17 | Mar | 1804 | 17 | Sep | 1836
-DGMH | 159 | 11 | Jun | 1881 | 28 | Dec | 1900
+DGMH | 159 | 11 | Jun | 1881 | 31 | Dec | 1900
 DGMH | 486 | 18 | Jun | 1870 | 6 | Dec | 1872
 DGMH | 487 | 7 | Dec | 1872 | 10 | Jun | 1881
 DNLN | 51 | 21 | Jan | 1846 | 31 | Dec | 1900
@@ -48,7 +50,7 @@ DUCR | 161 | 22 | Apr | 1861 | 14 | Apr | 1862
 DUCR | 162 | 15 | Apr | 1862 | 27 | Feb | 1873
 DUCR | 163 | 28 | Feb | 1873 | 11 | Mar | 1873
 DUCR | 269 | 12 | Mar | 1873 | 15 | Nov | 1899
-DUCR | 164 | 16 | Nov | 1899 | 29 | Dec | 1900
+DUCR | 164 | 16 | Nov | 1899 | 31 | Dec | 1900
 ERLN | 53 | 30 | Sep | 1838 | 29 | Dec | 1900
 ESSD | 165 | 7 | Jan | 1831 | 16 | July | 1892
 ESSD | 166 | 23 | Jul | 1892 | 29 | Dec | 1900
@@ -64,6 +66,7 @@ SOHD | 492 | 17 | Jan | 1825 | 24 | Sept | 1827
 SOHD | 493 | 29 | Sept | 1827 | 15 | Oct | 1831
 SOHD | 494 | 22 | Oct | 1831 | 28 | Jan | 1860
 SOHD | 495 | 4 | Feb | 1860 | 29 | Dec | 1900
+HPTE | 66 | 14 | Oct | 1799 | 30 | Dec | 1799
 HPTE | 66 | 1 | Jan | 1800 | 8 | Feb | 1802
 HPTE | 67 | 15 | Feb | 1802 | 22 | Feb | 1802
 HPTE | 68 | 1 | Mar | 1802 | 4 | Jul | 1803
@@ -77,9 +80,9 @@ HLPA | 64 | 12 | Apr | 1833 | 18 | Nov | 1842
 HLPA | 65 | 25 | Nov | 1842 | 26 | Feb | 1886
 IPNW | 72 | 5 | Jan | 1867 | 29 | Dec | 1900
 IPJO | 71 | 1 | Jan | 1800 | 31 | Dec | 1900
-IPJO | 71 | 19 | Nov | 1720 | 28 | Dec | 1799
+IPJO | 71 | 12 | Nov | 1720 | 28 | Dec | 1799
 IPJL | 71 | 1 | Jan | 1800 | 31 | Dec | 1900
-IPJL | 71 | 19 | Nov | 1720 | 28 | Dec | 1799
+IPJL | 71 | 12 | Nov | 1720 | 28 | Dec | 1799
 IMTS | 168 | 17 | Jul | 1869 | 5 | May | 1900
 IMTS | 169 | 12 | May | 1900 | 29 | Dec | 1900
 IWOR | 170 | 1 | Jan | 1853 | 29 | Dec | 1900
@@ -93,7 +96,7 @@ LAGER | 171 | 20 | Jun | 1801 | 24 | Dec | 1803
 LAGER | 488 | 31 | Dec | 1803 | 30 | Jun | 1894
 LSIR |236 | 2 | July | 1754 | 21 | Aug | 1809
 LSIR |268 | 28 | Aug | 1809 | 28 | Dec | 1818
-LSIR |193 | 4 | Jan | 1819 | 3 | June | 1866
+LSIR |193 | 4 | Jan | 1819 | 30 | June | 1866
 LEMR | 76 | 3 | Jan | 1807 | 31 | Dec | 1900
 LECH | 172 | 6 | Jan | 1827 | 24 | Sept | 1864
 LECH | 173 | 1 | Oct | 1864 | 29 | Dec | 1900
@@ -101,7 +104,7 @@ LVMR | 81 | 5 | Jul | 1811 | 31 | Dec | 1900
 LINP | 77 | 27 | Nov | 1842 | 8 | Jan | 1843
 LINP | 78 | 15 | Jan | 1843 | 27 | Aug | 1848
 LINP | 79 | 14 | Jan | 1849 | 31 | Dec | 1900
-LNDH | 80 | 17 | Sep | 1836 | 3 | Oct | 1839
+LNDH | 80 | 17 | Sep | 1836 | 6 | Oct | 1839
 MRTM | 501 | 17 | Oct | 1828 | 23 | May | 1829
 MRTM | 83 | 30 | May | 1829 | 26 | Aug | 1848
 MRTM | 84 | 2 | Sep | 1848 | 28 | Oct | 1848
@@ -132,7 +135,7 @@ COGE | 178 | 4 | Sept | 1835 | 29 | Dec | 1848
 COGE | 180 | 5 | Jan | 1849 | 27 | Dec | 1900
 SHIN | 490 | 11 | Dec | 1819 | 2 | Dec | 1820
 SHIN | 491 | 9 | Dec | 1820 | 16 | Mar | 1839
-SHIN | 181 | 23 | Mar | 1839 | 30 | Dec | 1900
+SHIN | 181 | 23 | Mar | 1839 | 31 | Dec | 1900
 SNSR | 97 | 19 | Jan | 1840 | 12 | Jul | 1840
 SDLN | 183 | 21 | May | 1827 | 31 | Dec | 1900
 STGY | 184 | 15 | July | 1869 | 29 | Dec | 1900
