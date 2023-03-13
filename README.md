@@ -8,7 +8,7 @@ A command line tool for restructuring data in the JISC 19th Century British Libr
 - Python > 3.8
 - [poetry](https://python-poetry.org/docs/)
 
-### Installation
+## Installation
 
 1. Clone this repo: `git clone https://github.com/Living-with-machines/jisc-wrangler.git`
 2. Navigate into the repo: `cd jisc-wrangler`
