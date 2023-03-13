@@ -1,5 +1,5 @@
 from cmath import exp
-from jisc_wrangler import *
+from jisc_wrangler.jisc_wrangler import *
 from pytest import raises
 from unittest.mock import create_autospec
 

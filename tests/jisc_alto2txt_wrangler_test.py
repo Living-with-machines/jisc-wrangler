@@ -1,5 +1,5 @@
 import xml.etree.ElementTree as ET
-from jisc_alto2txt_wrangler import *
+from jisc_wrangler.jisc_alto2txt_wrangler import *
 import pytest
 
 
