@@ -2,7 +2,7 @@
 name = "jisc-wrangler"
 version = "0.1.0"
 description = ""
-authors = ["Joseph Palmer <jpalmer@turing.ac.uk>"]
+authors = ["Joseph Palmer <jpalmer@turing.ac.uk>", "Tim Hobson <>"]
 readme = "README.md"
 packages = [{include = "jisc_wrangler"}]
 
