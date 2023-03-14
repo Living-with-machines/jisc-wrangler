@@ -8,6 +8,7 @@ import os
 from sys import exit
 import logging
 import argparse
+from jisc_wrangler import constants
 from pathlib import Path
 from shutil import move, copy
 from distutils.dir_util import copy_tree
@@ -16,62 +17,6 @@ from re import compile, IGNORECASE
 from hashlib import md5
 from tqdm import tqdm  # type: ignore
 import pkg_resources
-
-# Regex patterns for INPUT DIRECTORIES:
-# These should be mutually exclusive and exhaustive when used
-# case-insenstively (grep -E -i). Parts in parentheses are the
-# corresponding standardised output paths.
-P_SERVICE = os.path.join(
-    '([A-Z]{4}', '[0-9]{4}', '[0-9]{2}', '[0-9]{2})(', ')service', '')
-P_MASTER = os.path.join(
-    '([A-Z]{4}', '[0-9]{4}', '[0-9]{2}', '[0-9]{2})(', ')master', '')
-P_SUBDAY = '_[S,V]'
-P_SERVICE_SUBDAY = os.path.join('([A-Z]{4}', '[0-9]{4}', '[0-9]{2}',
-                                '[0-9]{2})' + P_SUBDAY + '(', ')service', '')
-P_MASTER_SUBDAY = os.path.join('([A-Z]{4}', '[0-9]{4}', '[0-9]{2}',
-                               '[0-9]{2})' + P_SUBDAY + '(', ')master', '')
-P_LSIDYV = os.path.join('lsidyv[a-z0-9]{4}[a-z0-9]?[a-z0-9]?', '[A-Z]{4}-')
-P_LSIDYV_ANOMALY = os.path.join(
-    'lsidyv[a-z0-9]{4}[a-z0-9]?[a-z0-9]?', '[A-Z]{5}-')
-P_OSMAPS = os.path.join('OSMaps.*?(\\.shp|', 'metadata)\\.xml$')
-
-service_pattern = compile(P_SERVICE, IGNORECASE)
-service_subday_pattern = compile(P_SERVICE_SUBDAY, IGNORECASE)
-master_pattern = compile(P_MASTER, IGNORECASE)
-master_subday_pattern = compile(P_MASTER_SUBDAY, IGNORECASE)
-lsidyv_pattern = compile(P_LSIDYV)
-lsidyv_anomaly_pattern = compile(P_LSIDYV_ANOMALY)
-os_maps_pattern = compile(P_OSMAPS)
-
-# Do *not* include the anomalous pattern here.
-dir_patterns = [service_pattern, service_subday_pattern, master_pattern,
-                master_subday_pattern, lsidyv_pattern, os_maps_pattern]
-
-# Regex patterns for the STANDARDISED OUTPUT DIRECTORIES:
-# Note matches only end of line $.
-P_STANDARD_SUBDIR = os.path.join(
-    '[A-Z]{4}', '[0-9]{4}', '[0-9]{2}', '[0-9]{2}$')
-standard_subdir_pattern = compile(P_STANDARD_SUBDIR)
-
-# Working filenames
-filename_prefix = 'jw_'
-name_logfile = 'jw.log'
-name_unmatched_file = filename_prefix + 'unmatched.txt'
-name_ignored_file = filename_prefix + 'ignored.txt'
-name_duplicates_file = filename_prefix + 'duplicates.txt'
-
-# Constants
-len_title_code = len('ABCD')
-len_title_code_dir = len(os.path.join('ABCD', ''))
-len_title_code_y_dir = len(os.path.join('ABCD', 'YYYY', ''))
-len_title_code_ym_dir = len(os.path.join('ABCD', 'YYYY', 'MM', ''))
-len_title_code_ymd_dir = len(os.path.join('ABCD', 'YYYY', 'MM', 'DD', ''))
-len_subday_subscript = len('_X')
-len_day = len('DD')
-
-# Suffix used to distinguish non-duplicates with conflicting filenames.
-alt_filename_suffix = '_ALT'
-
 
 def main():
 
@@ -218,7 +163,7 @@ def process_full_path(full_path, stub_length, args):
     logging.debug(f"Processing full path: {full_path}")
 
     # If the full path matches the P_OSMAPS pattern, ignore it.
-    if os_maps_pattern.search(full_path):
+    if constants.os_maps_pattern.search(full_path):
         ignore_file(full_path, args.working_dir)
         return full_path
 
@@ -257,11 +202,11 @@ def determine_from_to(full_path, stub_length, output_dir):
 
     # Handle lsidvv files one at a time because their full paths do not include
     # YYYY/MM/DD subdirectories.
-    if lsidyv_pattern.search(full_path):
+    if constants.lsidyv_pattern.search(full_path):
 
         # The length of the target subdirectory in this case always includes
         # the year, month and day (because we're processing a single file).
-        len_subdir = len_title_code_ymd_dir
+        len_subdir = constants.len_title_code_ymd_dir
         out_dir = target_output_subdir(full_path, len_subdir, output_dir)
 
         # Create the output directory if it doesn't already exist.
@@ -281,8 +226,13 @@ def determine_from_to(full_path, stub_length, output_dir):
     # Iterate over these subdirectory suffixes in order of increasing length and
     # handle the case where the target subdirectory does not yet exist.
     else:
-        for len_subdir in [len_title_code_dir, len_title_code_y_dir,
-                           len_title_code_ym_dir, len_title_code_ymd_dir]:
+        len_titles = [
+            constants.len_title_code_dir,
+            constants.len_title_code_y_dir,
+            constants.len_title_code_ym_dir,
+            constants.len_title_code_ymd_dir
+        ]
+        for len_subdir in len_titles:
 
             # Get the target output directory for this file (full_path) assuming
             # the current subdirectory depth.
@@ -291,16 +241,16 @@ def determine_from_to(full_path, stub_length, output_dir):
             # If that target subdirectory doesn't already exist...
             if not os.path.isdir(out_dir):
                 # ...then that's the part of the full_path that can be handled.
-                len_path = stub_length + len_subdir - len_title_code
+                len_path = stub_length + len_subdir - constants.len_title_code
 
                 # Handle the case where the path matches the subday pattern.
                 # If the full_path matches a subday pattern and the day
                 # subdir is to be copied, extend the length of the 'copy from'
                 # path by the length of the subscript.
-                if len_subdir == len_title_code_ymd_dir:
-                    if (service_subday_pattern.search(full_path) or
-                            master_subday_pattern.search(full_path)):
-                        len_path += len_subday_subscript
+                if len_subdir == constants.len_title_code_ymd_dir:
+                    if (constants.service_subday_pattern.search(full_path) or
+                            constants.master_subday_pattern.search(full_path)):
+                        len_path += constants.len_subday_subscript
 
                 return full_path[:len_path], out_dir
 
@@ -351,7 +301,7 @@ def process_duplicate_file(full_path, from_to, working_dir, dry_run):
     # Compare the two hashes.
     if hash_new == hash_original:
         # If they're equal, append a line to the duplicates file.
-        with open(working_file(name_duplicates_file, working_dir), 'a+') as f:
+        with open(working_file(constants.name_duplicates_file, working_dir), 'a+') as f:
             f.write(f"{from_to[1]} duplicated at {full_path}\n")
         f.close()
         logging.info(f"Added file {full_path} to the duplicates list.")
@@ -402,21 +352,23 @@ def standardise_output_dirs(output_subdir):
     for subdir in subdirs:
         # if a 'SERVICE' or 'MASTER' pattern matches,
         # remove the last subdirectory.
-        if (service_pattern.search(subdir) or
-            service_subday_pattern.search(subdir) or
-            master_pattern.search(subdir) or
-                master_subday_pattern.search(subdir)):
+        if (
+            constants.service_pattern.search(subdir) or
+            constants.service_subday_pattern.search(subdir) or
+            constants.master_pattern.search(subdir) or
+            constants.master_subday_pattern.search(subdir)
+            ):
 
             remove_last_subdir(subdir)
 
         # If a 'SUBDAY' pattern matches, rename the 'subday' directory.
-        if (service_subday_pattern.search(subdir) or
-                master_subday_pattern.search(subdir)):
+        if (constants.service_subday_pattern.search(subdir) or
+                constants.master_subday_pattern.search(subdir)):
 
             remove_subday_subdir(subdir)
 
         # No standardisation needed in the case of lsidyv files.
-        if lsidyv_pattern.search(subdir):
+        if constants.lsidyv_pattern.search(subdir):
             raise NotImplementedError(
                 "Standardisation of 'LSIDYV' directories implemented")
 
@@ -424,7 +376,7 @@ def standardise_output_dirs(output_subdir):
     unique_leaf_subdirs = list(
         set([os.path.dirname(f) for f in list_all_files(output_subdir)]))
     for subdir in unique_leaf_subdirs:
-        if not standard_subdir_pattern.search(subdir):
+        if not constants.standard_subdir_pattern.search(subdir):
             msg = f"Failed to standardise output subdirectory: {subdir}"
             raise RuntimeError(msg)
     logging.info(f"Standardised output directory {output_subdir}")
@@ -479,14 +431,14 @@ def remove_subday_subdir(path):
 
     # Make sure the last-but-one subdirectory matches the expected pattern.
     subscript_dir_path = os.path.dirname(path)
-    subday_pattern = compile(P_SUBDAY + '$', IGNORECASE)
+    subday_pattern = compile(constants.P_SUBDAY + '$', IGNORECASE)
     if not subday_pattern.search(subscript_dir_path):
         msg = f"Failed to match subscripted subdirectory:\n{subscript_dir_path}"
         raise ValueError(msg)
 
     # Remove the last characters (the subscript) from subdirectory name.
     # new_path = os.path.join(subscript_dir_path[:-len_subday_subscript], '')
-    to_dir = subscript_dir_path[:-len_subday_subscript]
+    to_dir = subscript_dir_path[:-constants.len_subday_subscript]
     move_from_to(from_dir=subscript_dir_path, to_dir=to_dir)
 
 
@@ -515,16 +467,16 @@ def standardised_output_subdir(full_path):
     """
 
     # Loop over the directory pattens.
-    for pattern in dir_patterns:
+    for pattern in constants.dir_patterns:
 
         # If the directory pattern matches, extract the standardised path.
         s = pattern.search(full_path)
         if s:
-            if pattern == lsidyv_pattern:
+            if pattern == constants.lsidyv_pattern:
                 # Handle the lsidvy pattern by inspecting the filename.
                 filename = os.path.basename(full_path)
                 title_code, year, month = filename.split('-')[:3]
-                day = filename.split('-')[-1].split('.')[0][:len_day]
+                day = filename.split('-')[-1].split('.')[0][:constants.len_day]
                 return os.path.join(title_code.upper(), year, month, day, '')
 
             return (s.group(1) + s.group(2)).upper()
@@ -546,7 +498,7 @@ def extract_file_path_stubs(paths, working_dir, sorted=False):
     Raises: RuntimeError if any path is not pattern-matched to obtain the stub.
     """
 
-    stubs = flatten([extract_pattern_stubs(p, paths) for p in dir_patterns])
+    stubs = flatten([extract_pattern_stubs(p, paths) for p in constants.dir_patterns])
 
     # Check all files were matched against the known directory patterns.
     if len(paths) != len(stubs):
@@ -554,7 +506,7 @@ def extract_file_path_stubs(paths, working_dir, sorted=False):
         # Write the unmatched full paths to a file in the working directory.
         write_unmatched_file(paths, working_dir)
         msg = f"Matched only {len(stubs)} directory patterns out of"
-        msg = f"{msg} {len(paths)} files. See the {name_unmatched_file} file."
+        msg = f"{msg} {len(paths)} files. See the {constants.name_unmatched_file} file."
         raise RuntimeError(msg)
 
     if sorted:
@@ -571,14 +523,14 @@ def extract_pattern_stubs(pattern, paths):
     Returns: a list of strings, one stub for each of the given paths.
     """
 
-    if pattern == lsidyv_pattern:
+    if pattern == constants.lsidyv_pattern:
         # Handle the lsidyv pattern.
         ret = [str[0:m.end()] for str in paths if (m := pattern.search(str))]
     else:
         # Match on the directory pattern (title code & subdirectories thereof)
         # but extract only the initial part of the path (up to & including the
         # title code).
-        ret = [str[0:m.start() + len_title_code]
+        ret = [str[0:m.start() + constants.len_title_code]
                for str in paths if (m := pattern.search(str))]
 
     logging.info(
@@ -593,7 +545,7 @@ def fix_anomalous_title_codes(paths, working_dir):
     count = 0
     for i in range(0, len(paths)):
         path = paths[i]
-        if lsidyv_anomaly_pattern.search(path):
+        if constants.lsidyv_anomaly_pattern.search(path):
 
             # Correct the title code anomaly.
             new_path = fix_title_code_anomaly(path, working_dir)
@@ -613,7 +565,7 @@ def fix_anomalous_title_codes(paths, working_dir):
 
 def fix_title_code_anomaly(path, working_dir):
 
-    m = lsidyv_anomaly_pattern.search(path)
+    m = constants.lsidyv_anomaly_pattern.search(path)
     if not m:
         raise ValueError(f"Anomalous title code not found in {path}")
 
@@ -635,11 +587,11 @@ def validate(num_existing_output_files, args):
     logging.info(f"Counted {num_input_files} input files.")
 
     num_duplicated_files = count_lines(
-        working_file(name_duplicates_file, args.working_dir))
+        working_file(constants.name_duplicates_file, args.working_dir))
     logging.info(f"Counted {num_duplicated_files} duplicated files.")
 
     num_ignored_files = count_lines(
-        working_file(name_ignored_file, args.working_dir))
+        working_file(constants.name_ignored_file, args.working_dir))
     logging.info(f"Counted {num_ignored_files} ignored files.")
 
     if args.dry_run:
@@ -752,7 +704,7 @@ def alt_output_file(file_path):
         The alternative output file path (string).
     """
     file_path, extension = os.path.splitext(file_path)
-    return file_path + alt_filename_suffix + extension
+    return file_path + constants.alt_filename_suffix + extension
 
 
 def list_all_subdirs(dir):
@@ -819,9 +771,9 @@ def working_file(filename, working_dir):
 def write_unmatched_file(paths, working_dir):
     """Write out a list of files that do not match any of the directory patterns."""
 
-    for pattern in dir_patterns:
+    for pattern in constants.dir_patterns:
         paths = [str for str in paths if not pattern.search(str)]
-    unmatched_file = working_file(name_unmatched_file, working_dir)
+    unmatched_file = working_file(constants.name_unmatched_file, working_dir)
     with open(unmatched_file, 'w') as f:
         for path in paths:
             f.write(f"{path}\n")
@@ -831,7 +783,7 @@ def write_unmatched_file(paths, working_dir):
 def ignore_file(full_path, working_dir):
     """Process a file that can be safely ignored."""
 
-    with open(working_file(name_ignored_file, working_dir), 'a+') as f:
+    with open(working_file(constants.name_ignored_file, working_dir), 'a+') as f:
         f.write(f"{full_path}\n")
     f.close()
     logging.info(f"Added file {full_path} to the ignored list.")
@@ -912,7 +864,7 @@ def setup_directories(args):
         Path(args.output_dir).mkdir(parents=True, exist_ok=True)
 
     # Create a timestamped working subdirectory.
-    working_subdir = f'{filename_prefix}{datetime.now().strftime("%Y-%m-%d_%Hh-%Mm-%Ss")}'
+    working_subdir = f'{constants.filename_prefix}{datetime.now().strftime("%Y-%m-%d_%Hh-%Mm-%Ss")}'
     working_dir = os.path.join(args.working_dir, working_subdir)
     if not os.path.exists(working_dir):
         Path(working_dir).mkdir(parents=True, exist_ok=True)
@@ -930,7 +882,7 @@ def setup_logging(args):
     level = logging.INFO
     if (args.debug):
         level = logging.DEBUG
-    log_full_path = os.path.join(args.working_dir, name_logfile)
+    log_full_path = os.path.join(args.working_dir, constants.name_logfile)
     logging.basicConfig(filename=log_full_path, filemode='w',
                         format='%(asctime)s - %(levelname)s - %(message)s',
                         level=level)

@@ -1,5 +1,6 @@
 import xml.etree.ElementTree as ET
 from jisc_wrangler.jisc_alto2txt_wrangler import *
+from jisc_wrangler import constants
 import pytest
 
 
@@ -76,16 +77,16 @@ def nonstandard_xml_tree():
 def test_replace_publication_id(xml_tree):
 
     # Initially the publication id is "RDNP"
-    assert xml_tree.find(publication_element_name).attrib[
-        publication_id_attribute_name] == "RDNP"
+    assert xml_tree.find(constants.publication_element_name).attrib[
+        constants.publication_id_attribute_name] == "RDNP"
 
     lookup = read_title_code_lookup_file()
     result = replace_publication_id(xml_tree, lookup)
 
     # After replacement the publication id in the XML tree is "0000095"
-    assert len(xml_tree.findall(publication_element_name)) == 1
-    assert xml_tree.find(publication_element_name).attrib[
-        publication_id_attribute_name] == "0000095"
+    assert len(xml_tree.findall(constants.publication_element_name)) == 1
+    assert xml_tree.find(constants.publication_element_name).attrib[
+        constants.publication_id_attribute_name] == "0000095"
 
     # The return value is the publication id:
     assert result == ("RDNP", "0000095")
@@ -94,8 +95,8 @@ def test_replace_publication_id(xml_tree):
 def test_standardise_title_code(nonstandard_xml_tree):
 
     # Initially the publication id is "NCBL1023"
-    title_code = nonstandard_xml_tree.find(publication_element_name).attrib[
-        publication_id_attribute_name]
+    title_code = nonstandard_xml_tree.find(constants.publication_element_name).attrib[
+        constants.publication_id_attribute_name]
     assert title_code == "NCBL1023"
 
     result = standardise_title_code(title_code, nonstandard_xml_tree)

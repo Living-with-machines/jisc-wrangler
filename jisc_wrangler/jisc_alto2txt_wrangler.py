@@ -19,36 +19,12 @@ from pathlib import Path
 from shutil import copy
 import logging
 import argparse
+from jisc_wrangler import constants
 from datetime import datetime
 import csv
 import xml.etree.ElementTree as ET
 from tqdm import tqdm  # type: ignore
 import pkg_resources
-
-# Constants
-publication_element_name = 'publication'
-publication_id_attribute_name = 'id'
-issue_element_name = "issue"
-date_element_name = 'date'
-input_sub_path_element_name = './/input_sub_path'
-
-# Data.
-title_code_lookup_file = "data/title_code_lookup.csv"
-title_code_lookup_delimiter = '|'
-title_index = 0
-nlp_index = 1
-start_day_index = 2
-start_month_index = 3
-start_year_index = 4
-end_day_index = 5
-end_month_index = 6
-end_year_index = 7
-
-# Filenames
-name_logfile = 'jw_alto2txt.log'
-metadata_xml_suffix = '_metadata.xml'
-plaintext_extension = '.txt'
-
 
 def main():
 
@@ -81,7 +57,7 @@ def process_inputs(args):
     lookup = read_title_code_lookup_file()
 
     # Get the input metadata file full paths.
-    metadata_files = list_files(args.input_dir, metadata_xml_suffix)
+    metadata_files = list_files(args.input_dir, constants.metadata_xml_suffix)
 
     logging.info(f"Found {len(metadata_files)} metadata files.")
 
@@ -129,8 +105,12 @@ def process_inputs(args):
                 print(msg + ". File was removed. Continuing...")
 
         # Find the corresponding plaintext file.
-        plaintext_path = Path(file.replace(
-            metadata_xml_suffix, plaintext_extension))
+        plaintext_path = Path(
+            file.replace(
+                constants.metadata_xml_suffix,
+                constants.plaintext_extension
+            )
+        )
 
         if not plaintext_path.is_file():
             msg = f"Failed to find plaintext file at: {plaintext_path}"
@@ -152,8 +132,8 @@ def process_inputs(args):
 def validate(args):
 
     # Compare the number of input & output metadata files.
-    input_metadata_files = list_files(args.input_dir, metadata_xml_suffix)
-    output_metadata_files = list_files(args.output_dir, metadata_xml_suffix)
+    input_metadata_files = list_files(args.input_dir, constants.metadata_xml_suffix)
+    output_metadata_files = list_files(args.output_dir, constants.metadata_xml_suffix)
 
     if len(input_metadata_files) != len(output_metadata_files):
         msg = f"unequal input & output metadata file counts."
@@ -161,8 +141,8 @@ def validate(args):
         print(f"WARNING: {msg}")
 
     # Compare the number of input & output plaintext files.
-    input_plaintext_files = list_files(args.input_dir, plaintext_extension)
-    output_plaintext_files = list_files(args.output_dir, plaintext_extension)
+    input_plaintext_files = list_files(args.input_dir, constants.plaintext_extension)
+    output_plaintext_files = list_files(args.output_dir, constants.plaintext_extension)
 
     if len(input_plaintext_files) != len(output_plaintext_files):
         msg = f"unequal input & output plaintext file counts."
@@ -188,13 +168,13 @@ def replace_publication_id(xml_tree, lookup):
     Returns: a tuple of the 4-character title code & the 7-digit NLP code.
     """
 
-    pub_elem = xml_tree.find(publication_element_name)
+    pub_elem = xml_tree.find(constants.publication_element_name)
 
     if pub_elem is None:
         logging.warning("Failed to find publication element in XML tree.")
         return None, None
 
-    title_code = pub_elem.attrib[publication_id_attribute_name]
+    title_code = pub_elem.attrib[constants.publication_id_attribute_name]
     if title_code is None:
         logging.warning("Failed to find title code attribute in XML tree.")
         return None, None
@@ -204,8 +184,8 @@ def replace_publication_id(xml_tree, lookup):
             logging.warning("Failed to standardise title code.")
             return None, None
 
-    date_str = pub_elem.find(issue_element_name +
-                             "/" + date_element_name).text
+    date_str = pub_elem.find(constants.issue_element_name +
+                             "/" + constants.date_element_name).text
     if date_str is None:
         logging.warning("Failed to find issue/date element in XML tree.")
         return None, None
@@ -220,7 +200,7 @@ def replace_publication_id(xml_tree, lookup):
         return None, None
 
     try:
-        pub_elem.set(publication_id_attribute_name, nlp)
+        pub_elem.set(constants.publication_id_attribute_name, nlp)
     except Exception as e:
         print(f"Failed to set publication element in XML tree.")
         print(f"ERROR: {str(e)}")
@@ -246,7 +226,7 @@ def standardise_title_code(title_code, xml_tree):
     if title_code[0:4] == "NCBL" or title_code[0:5] == "BL000":
 
         # Extract the correct title code from the input subdirectory path.
-        input_sub_path_elem = xml_tree.find(input_sub_path_element_name)
+        input_sub_path_elem = xml_tree.find(constants.input_sub_path_element_name)
         logging.info(
             f"Extracted title code from subdirectory path: {input_sub_path_elem.text}")
         return input_sub_path_elem.text[0:4]
@@ -316,8 +296,8 @@ def read_title_code_lookup_file():
 
     # Read the title code lookup file.
     rows = []
-    with open(title_code_lookup_file) as csvfile:
-        csvreader = csv.reader(csvfile, delimiter=title_code_lookup_delimiter)
+    with open(constants.title_code_lookup_file) as csvfile:
+        csvreader = csv.reader(csvfile, delimiter=constants.title_code_lookup_delimiter)
         for row in csvreader:
             rows.append(row)
 
@@ -327,8 +307,8 @@ def read_title_code_lookup_file():
         start = parse_lookup_date(row, start=True)
         end = parse_lookup_date(row, start=False)
         # Pad the NLP code to 7 characters.
-        nlp = row[nlp_index].strip().rjust(7, '0')
-        title_code = row[title_index].strip()
+        nlp = row[constants.nlp_index].strip().rjust(7, '0')
+        title_code = row[constants.title_index].strip()
 
         element = ((start, end), nlp)
         # If the title code is not already in the dictionary, add it.
@@ -349,13 +329,13 @@ def parse_lookup_date(row, start):
     """
 
     if start:
-        day_index = start_day_index
-        month_index = start_month_index
-        year_index = start_year_index
+        day_index = constants.start_day_index
+        month_index = constants.start_month_index
+        year_index = constants.start_year_index
     else:
-        day_index = end_day_index
-        month_index = end_month_index
-        year_index = end_year_index
+        day_index = constants.end_day_index
+        month_index = constants.end_month_index
+        year_index = constants.end_year_index
 
     # Pad the day to 2 characters.
     day = row[day_index].strip().rjust(2, '0')
@@ -462,7 +442,7 @@ def setup_logging(args):
     level = logging.INFO
     if (args.debug):
         level = logging.DEBUG
-    log_full_path = os.path.join(os.getcwd(), name_logfile)
+    log_full_path = os.path.join(os.getcwd(), constants.name_logfile_alto2txt)
     logging.basicConfig(filename=log_full_path, filemode='w',
                         format='%(asctime)s - %(levelname)s - %(message)s',
                         level=level)

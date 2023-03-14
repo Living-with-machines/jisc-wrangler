@@ -1,5 +1,6 @@
 from cmath import exp
 from jisc_wrangler.jisc_wrangler import *
+from jisc_wrangler import constants
 from pytest import raises
 from unittest.mock import create_autospec
 
@@ -64,19 +65,19 @@ def test_list_all_subdirs(fs):
 def test_extract_pattern_stubs():
 
     # The first five paths match the P_SERVICE pattern.
-    actual = extract_pattern_stubs(service_pattern, paths)
+    actual = extract_pattern_stubs(constants.service_pattern, paths)
     assert actual == stubs[:4]
 
     # The fifth path matches the P_SERVICE_SUBDAY pattern.
-    actual = extract_pattern_stubs(service_subday_pattern, paths)
+    actual = extract_pattern_stubs(constants.service_subday_pattern, paths)
     assert actual == stubs[4:5]
 
     # The sixth & seventh paths match the P_LSIDYV pattern.
-    actual = extract_pattern_stubs(lsidyv_pattern, paths)
+    actual = extract_pattern_stubs(constants.lsidyv_pattern, paths)
     assert actual == stubs[5:7]
 
     # None of the paths matches the P_MASTER pattern.
-    actual = extract_pattern_stubs(master_pattern, paths)
+    actual = extract_pattern_stubs(constants.master_pattern, paths)
     assert actual == []
 
 
@@ -201,7 +202,7 @@ def test_standardised_output_subdir():
 
     # Test with a full path matching the P_SERVICE pattern.
     full_path = '/data/JISC/JISC1_VOL1_C0/009/Data/Job-2001/Batch_0162/2001-0162/WO1/RDNP/1862/01/05/service/WO1_RDNP_1862_01_05-0001-001.xml'
-    assert service_pattern.search(full_path)
+    assert constants.service_pattern.search(full_path)
 
     actual = standardised_output_subdir(full_path)
     expected = 'RDNP/1862/01/05/'
@@ -209,7 +210,7 @@ def test_standardised_output_subdir():
 
     # Test with a full path matching the P_SERVICE_SUBDAY pattern.
     full_path = '/data/JISC/JISC1_VOL1_C0/009/Data/Job-2001/Batch_0162/2001-0162/WO1/RDNP/1862/01/05_S/service/WO1_RDNP_1862_01_05-0001-001.xml'
-    assert service_subday_pattern.search(full_path)
+    assert constants.service_subday_pattern.search(full_path)
 
     actual = standardised_output_subdir(full_path)
     expected = 'RDNP/1862/01/05/'
@@ -217,7 +218,7 @@ def test_standardised_output_subdir():
 
     # Test with a full path matching the P_MASTER pattern.
     full_path = '/data/JISC/JISC1_VOL1_C0/009/Data/Job-2001/Batch_0162/2001-0162/WO1/RDNP/1862/01/05/master/WO1_RDNP_1862_01_05-0001-001.xml'
-    assert master_pattern.search(full_path)
+    assert constants.master_pattern.search(full_path)
 
     actual = standardised_output_subdir(full_path)
     expected = 'RDNP/1862/01/05/'
@@ -225,7 +226,7 @@ def test_standardised_output_subdir():
 
     # Test with a full path matching the P_MASTER_SUBDAY pattern.
     full_path = '/data/JISC/JISC1_VOL1_C0/009/Data/Job-2001/Batch_0162/2001-0162/WO1/RDNP/1862/01/05_V/master/WO1_RDNP_1862_01_05-0001-001.xml'
-    assert master_subday_pattern.search(full_path)
+    assert constants.master_subday_pattern.search(full_path)
 
     actual = standardised_output_subdir(full_path)
     expected = 'RDNP/1862/01/05/'
@@ -233,7 +234,7 @@ def test_standardised_output_subdir():
 
     # Test with a full path matching the P_LSIDYV pattern.
     full_path = '/data/JISC/JISC2/lsidyv100b3f/MOPT-1863-02-16.xml'
-    assert lsidyv_pattern.search(full_path)
+    assert constants.lsidyv_pattern.search(full_path)
 
     actual = standardised_output_subdir(full_path)
     expected = 'MOPT/1863/02/16/'
@@ -241,7 +242,7 @@ def test_standardised_output_subdir():
 
     # Test with a full path matching the P_LSIDYV pattern with _mets subscript.
     full_path = '/data/JISC/JISC2/lsidyvfd9b/IMTS-1877-10-13_mets.xml'
-    assert lsidyv_pattern.search(full_path)
+    assert constants.lsidyv_pattern.search(full_path)
 
     actual = standardised_output_subdir(full_path)
     expected = 'IMTS/1877/10/13/'
@@ -392,7 +393,7 @@ def test_alt_output_file():
 
     file_path = "/jisc1and2full/clean/ANJO/1891/01/07/WO1_ANJO_1891_01_07-0001-001.xml"
     expected = "/jisc1and2full/clean/ANJO/1891/01/07/WO1_ANJO_1891_01_07-0001-001" + \
-        alt_filename_suffix + ".xml"
+        constants.alt_filename_suffix + ".xml"
     actual = alt_output_file(file_path)
 
     assert actual == expected
