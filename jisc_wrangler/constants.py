@@ -42,10 +42,10 @@ dir_patterns = [
 # Working filenames
 filename_prefix = 'jw_'
 name_logfile = 'jw.log'
+name_logfile_alto2txt = 'jw_alto2txt.log'
 name_unmatched_file = filename_prefix + 'unmatched.txt'
 name_ignored_file = filename_prefix + 'ignored.txt'
 name_duplicates_file = filename_prefix + 'duplicates.txt'
-name_logfile_alto2txt = 'jw_alto2txt.log'
 metadata_xml_suffix = '_metadata.xml'
 plaintext_extension = '.txt'
 

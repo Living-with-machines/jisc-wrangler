@@ -8,13 +8,12 @@ import os
 from sys import exit
 import logging
 import argparse
-from jisc_wrangler import constants, logutils
+from jisc_wrangler import constants, logutils, utils
 from pathlib import Path
-from shutil import move, copy
+from shutil import copy
 from distutils.dir_util import copy_tree
 from datetime import datetime
 from re import compile, IGNORECASE
-from hashlib import md5
 from tqdm import tqdm  # type: ignore
 
 def main():
@@ -25,7 +24,7 @@ def main():
         initialise(args)
 
         # Record the prior state of the output directory.
-        num_existing_output_files = count_all_files(args.output_dir, "output")
+        num_existing_output_files = utils.count_all_files(args.output_dir, "output")
 
         # Process all of the files under the input directory.
         process_inputs(args)
@@ -48,7 +47,7 @@ def process_inputs(args):
     """
 
     # Look at the input file paths & extract the 'stubs'.
-    all_files = list_all_files(args.input_dir, sorted=True)
+    all_files = utils.list_files(args.input_dir, sorted=True)
     logging.info(f"Found {len(all_files)} input files.")
 
     # Preprocess P_LSIDYV_ANOMALY files to correct the anomalous title code.
@@ -58,7 +57,7 @@ def process_inputs(args):
         all_files, args.working_dir, sorted=True)
 
     # Get a sorted list of _unique_ file path stubs.
-    unique_stubs = remove_duplicates(all_stubs, sorted=True)
+    unique_stubs = utils.remove_duplicates(all_stubs, sorted=True)
     logging.info(f"Found {len(unique_stubs)} unique file path stubs.")
 
     # Print the number of titles to be processed (and a progress bar).
@@ -72,7 +71,7 @@ def process_inputs(args):
     for stub in tqdm(unique_stubs):
 
         # Count the number of leftover stubs matching this unique stub.
-        i = count_matches_in_list(stub, leftover_stubs)
+        i = utils.count_matches_in_list(stub, leftover_stubs)
 
         # Sanity check that we have a non-zero number of matches.
         if i == 0:
@@ -123,7 +122,7 @@ def process_stub(stub, full_paths, args):
         if processed is None:
             num_processed_paths = 1
         else:
-            num_processed_paths = count_matches_in_list(processed, full_paths)
+            num_processed_paths = utils.count_matches_in_list(processed, full_paths)
         full_paths = full_paths[num_processed_paths:]
 
     logging.info(f">>> Finished processing stub: {stub}")
@@ -163,7 +162,7 @@ def process_full_path(full_path, stub_length, args):
 
     # If the full path matches the P_OSMAPS pattern, ignore it.
     if constants.os_maps_pattern.search(full_path):
-        ignore_file(full_path, args.working_dir)
+        utils.ignore_file(full_path, args.working_dir)
         return full_path
 
     # Get the part of the full path that can be handled in this step by
@@ -294,8 +293,8 @@ def process_duplicate_file(full_path, from_to, working_dir, dry_run):
     """
 
     # Hash both the current file and the existing one in the output directory.
-    hash_new = hash_file(full_path)
-    hash_original = hash_file(from_to[1])
+    hash_new = utils.hash_file(full_path)
+    hash_original = utils.hash_file(from_to[1])
 
     # Compare the two hashes.
     if hash_new == hash_original:
@@ -309,7 +308,7 @@ def process_duplicate_file(full_path, from_to, working_dir, dry_run):
         msg = "Conflicting but distinct files detected.\n"
         msg = f"{msg}Input file: {full_path}\nConflicts with: {from_to[1]}"
         logging.warning(msg)
-        alt_from_to = (full_path, alt_output_file(from_to[1]))
+        alt_from_to = (full_path, utils.alt_output_file(from_to[1]))
         process_single_file(alt_from_to, dry_run)
 
 
@@ -345,7 +344,7 @@ def standardise_output_dirs(output_subdir):
     """
 
     # Get a list of all directories under the output subdirectory of interest.
-    subdirs = list_all_subdirs(output_subdir)
+    subdirs = utils.list_all_subdirs(output_subdir)
 
     # Iterate over the list of subdirectories.
     for subdir in subdirs:
@@ -373,7 +372,7 @@ def standardise_output_dirs(output_subdir):
 
     # Check that the new subdirectory structure is standard.
     unique_leaf_subdirs = list(
-        set([os.path.dirname(f) for f in list_all_files(output_subdir)]))
+        set([os.path.dirname(f) for f in utils.list_files(output_subdir)]))
     for subdir in unique_leaf_subdirs:
         if not constants.standard_subdir_pattern.search(subdir):
             msg = f"Failed to standardise output subdirectory: {subdir}"
@@ -404,7 +403,7 @@ def remove_last_subdir(path):
     if not os.path.isdir(path):
         raise ValueError(f"Path {path} does not exist on the filesystem.")
 
-    move_from_to(from_dir=path, to_dir=os.path.dirname(path))
+    utils.move_from_to(from_dir=path, to_dir=os.path.dirname(path))
 
 
 def remove_subday_subdir(path):
@@ -438,7 +437,7 @@ def remove_subday_subdir(path):
     # Remove the last characters (the subscript) from subdirectory name.
     # new_path = os.path.join(subscript_dir_path[:-len_subday_subscript], '')
     to_dir = subscript_dir_path[:-constants.len_subday_subscript]
-    move_from_to(from_dir=subscript_dir_path, to_dir=to_dir)
+    utils.move_from_to(from_dir=subscript_dir_path, to_dir=to_dir)
 
 
 def target_output_subdir(full_path, len_subdir, output_dir):
@@ -497,13 +496,13 @@ def extract_file_path_stubs(paths, working_dir, sorted=False):
     Raises: RuntimeError if any path is not pattern-matched to obtain the stub.
     """
 
-    stubs = flatten([extract_pattern_stubs(p, paths) for p in constants.dir_patterns])
+    stubs = utils.flatten([extract_pattern_stubs(p, paths) for p in constants.dir_patterns])
 
     # Check all files were matched against the known directory patterns.
     if len(paths) != len(stubs):
 
         # Write the unmatched full paths to a file in the working directory.
-        write_unmatched_file(paths, working_dir)
+        utils.write_unmatched_file(paths, working_dir)
         msg = f"Matched only {len(stubs)} directory patterns out of"
         msg = f"{msg} {len(paths)} files. See the {constants.name_unmatched_file} file."
         raise RuntimeError(msg)
@@ -582,15 +581,15 @@ def validate(num_existing_output_files, args):
 
     # Check all of the input files were processed. Every input file should be
     # in the output directory, the duplicates file or the ignored file.
-    num_input_files = count_all_files(args.input_dir)
+    num_input_files = utils.count_all_files(args.input_dir)
     logging.info(f"Counted {num_input_files} input files.")
 
-    num_duplicated_files = count_lines(
+    num_duplicated_files = utils.count_lines(
         os.path.join(args.working_dir, constants.name_duplicates_file)
     )
     logging.info(f"Counted {num_duplicated_files} duplicated files.")
 
-    num_ignored_files = count_lines(
+    num_ignored_files = utils.count_lines(
         os.path.join(args.working_dir, constants.name_ignored_file)
     )
     logging.info(f"Counted {num_ignored_files} ignored files.")
@@ -599,7 +598,7 @@ def validate(num_existing_output_files, args):
         logging.info("Final validation checks omitted in dry-run.")
         return
 
-    num_new_output_files = count_all_files(
+    num_new_output_files = utils.count_all_files(
         args.output_dir) - num_existing_output_files
     logging.info(f"Counted {num_new_output_files} new output files.")
 
@@ -614,175 +613,8 @@ def validate(num_existing_output_files, args):
 
 
 ##
-# Utils:
-##
-
-def flatten(nested_list):
-    """Flatten a list of lists."""
-
-    return [item for sublist in nested_list for item in sublist]
-
-
-def list_all_files(dir, sorted=False):
-    """List all of the files under a given directory, recursively.
-
-    Returns: a list of strings, optionally sorted.
-    """
-
-    ret = [str(f) for f in Path(dir).rglob('*') if os.path.isfile(f)]
-    if sorted:
-        ret.sort()
-    return ret
-
-
-def count_all_files(dir, description=None):
-    """Count the total number of files under a given directory."""
-
-    ret = len(list_all_files(dir))
-    if description:
-        logging.info(f"Counted {ret} files under the {description} directory.")
-    return ret
-
-
-def count_matches_in_list(prefix, str_list):
-    """
-    Count how many strings, at the start of a list, begin with a given prefix.
-    """
-
-    if len(str_list) == 0:
-        logging.warning("Empty list passed to 'count_matches_in_list'")
-        return 0
-
-    i = 0
-    while i != len(str_list) and str_list[i].startswith(prefix):
-        i += 1
-    return i
-
-
-def remove_duplicates(strs, sorted=False):
-    """Remove duplicates from a list."""
-
-    unique_strs = list(set(strs))
-
-    if sorted:
-        unique_strs.sort()
-    return unique_strs
-
-
-def hash_file(path, blocksize=65536):
-    """Calculate the MD5 hash of a given file
-    Arguments
-    ---------
-        path {str, os.path}: Path to the file to be hashed.
-        blocksize {int}: Memory size to read in the file (default: 65536)
-    Returns
-    -------
-        hash {str}: The HEX digest hash of the given file
-    """
-    # Instatiate the hashlib module with md5
-    hasher = md5()
-
-    # Open the file and instatiate the buffer
-    f = open(path, "rb")
-    buf = f.read(blocksize)
-
-    # Continue to read in the file in blocks
-    while len(buf) > 0:
-        hasher.update(buf)  # Update the hash
-        buf = f.read(blocksize)  # Update the buffer
-
-    f.close()
-    return hasher.hexdigest()
-
-
-def alt_output_file(file_path):
-    """Get an alternative output file path.
-
-    Args:
-        file_path (str): The standard output file path
-
-    Returns:
-        The alternative output file path (string).
-    """
-    file_path, extension = os.path.splitext(file_path)
-    return file_path + constants.alt_filename_suffix + extension
-
-
-def list_all_subdirs(dir):
-    """
-    Get a list of all subdirectories in a given directory, recursively.
-
-    Args:
-        dir (str): The path to a directory on the filesystem.
-
-    Returns: a list of strings, each with a trailing directory separator.
-    """
-
-    return [os.path.join(str(d), '') for d in Path(dir).rglob('*')
-            if not os.path.isfile(d)]
-
-
-def move_from_to(from_dir, to_dir):
-    """Move all file from one directory to another, and delete the first
-    directory.
-
-    Args:
-        from_dir    (str): The path to the source directory.
-        to_dir      (str): The path to the target directory.
-    """
-
-    # If the target directory does not already exist, create it.
-    if not os.path.exists(to_dir):
-        Path(to_dir).mkdir(parents=False, exist_ok=True)
-        logging.info(f"Created subdirectory at {to_dir}")
-
-    for f in list_all_files(from_dir):
-        move(f, to_dir)
-    logging.debug(f"Moved all files from: {from_dir} to: {to_dir}")
-    Path.rmdir(Path(from_dir).absolute())
-    logging.debug(f"Removed directory: {from_dir}.")
-
-
-def count_lines(file):
-    """
-    Count the number of lines in a file or file-like object.
-
-    Args:
-        file (file or stream): The file to be counted.
-    """
-
-    if not os.path.isfile(file):
-        return 0
-    with open(file, 'r') as f:
-        ret = sum(1 for _ in f.readlines())
-    return ret
-
-
-def write_unmatched_file(paths, working_dir):
-    """Write out a list of files that do not match any of the directory patterns."""
-
-    for pattern in constants.dir_patterns:
-        paths = [str for str in paths if not pattern.search(str)]
-    unmatched_file = os.path.join(working_dir, constants.name_unmatched_file)
-    with open(unmatched_file, 'w') as f:
-        for path in paths:
-            f.write(f"{path}\n")
-    f.close()
-
-
-def ignore_file(full_path, working_dir):
-    """Process a file that can be safely ignored."""
-
-    with open(os.path.join(working_dir, constants.name_ignored_file), 'a+') as f:
-        f.write(f"{full_path}\n")
-    f.close()
-    logging.info(f"Added file {full_path} to the ignored list.")
-
-
-##
 # Setup:
 ##
-
 
 def parse_args():
     """Parse arguments from the command line

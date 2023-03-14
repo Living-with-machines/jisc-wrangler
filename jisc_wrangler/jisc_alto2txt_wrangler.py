@@ -19,7 +19,7 @@ from pathlib import Path
 from shutil import copy
 import logging
 import argparse
-from jisc_wrangler import constants, logutils
+from jisc_wrangler import constants, logutils, utils
 from datetime import datetime
 import csv
 import xml.etree.ElementTree as ET
@@ -56,7 +56,9 @@ def process_inputs(args):
     lookup = read_title_code_lookup_file()
 
     # Get the input metadata file full paths.
-    metadata_files = list_files(args.input_dir, constants.metadata_xml_suffix)
+    metadata_files = utils.list_files(
+        args.input_dir, constants.metadata_xml_suffix
+    )
 
     logging.info(f"Found {len(metadata_files)} metadata files.")
 
@@ -131,8 +133,12 @@ def process_inputs(args):
 def validate(args):
 
     # Compare the number of input & output metadata files.
-    input_metadata_files = list_files(args.input_dir, constants.metadata_xml_suffix)
-    output_metadata_files = list_files(args.output_dir, constants.metadata_xml_suffix)
+    input_metadata_files = utils.list_files(
+        args.input_dir, constants.metadata_xml_suffix
+    )
+    output_metadata_files = utils.list_files(
+        args.output_dir, constants.metadata_xml_suffix
+    )
 
     if len(input_metadata_files) != len(output_metadata_files):
         msg = f"unequal input & output metadata file counts."
@@ -140,8 +146,12 @@ def validate(args):
         print(f"WARNING: {msg}")
 
     # Compare the number of input & output plaintext files.
-    input_plaintext_files = list_files(args.input_dir, constants.plaintext_extension)
-    output_plaintext_files = list_files(args.output_dir, constants.plaintext_extension)
+    input_plaintext_files = utils.list_files(
+        args.input_dir, constants.plaintext_extension
+    )
+    output_plaintext_files = utils.list_files(
+        args.output_dir, constants.plaintext_extension
+    )
 
     if len(input_plaintext_files) != len(output_plaintext_files):
         msg = f"unequal input & output plaintext file counts."
@@ -189,7 +199,7 @@ def replace_publication_id(xml_tree, lookup):
         logging.warning("Failed to find issue/date element in XML tree.")
         return None, None
 
-    year, month, day = parse_publicaton_date(date_str)
+    year, month, day = utils.parse_publicaton_date(date_str)
 
     nlp = title_code_to_nlp(
         title_code, year, month, day, lookup)
@@ -233,12 +243,6 @@ def standardise_title_code(title_code, xml_tree):
     return None
 
 
-def parse_publicaton_date(date_str):
-    """Parse a date string"""
-
-    return tuple(date_str.split('-'))
-
-
 def title_code_to_nlp(title_code, year, month, day, lookup):
     """
     Convert a 4-character title code to a 7-digit NLP code. Also supports
@@ -263,25 +267,12 @@ def title_code_to_nlp(title_code, year, month, day, lookup):
     date = datetime.strptime(day + '-' + month + '-' + year, "%d-%m-%Y")
     for entry in code_lookup:
         date_range = entry[0]
-        if date_in_range(date_range[0], date_range[1], date):
+        if utils.date_in_range(date_range[0], date_range[1], date):
             return entry[1]
 
     logging.warning(
         f"Date out of range for title code {title_code} in lookup table.")
     return None
-
-
-def date_in_range(start, end, date):
-    """Return date if date is in the range [start, end]
-
-    Args:
-        start (datetime): the start of the range
-        end (datetime): the end of the range
-        date (datetime): the date of interest
-    """
-    if start > end:
-        raise ValueError(f"Invalid date interval. Start: {start}, End: {end}.")
-    return start <= date <= end
 
 
 def read_title_code_lookup_file():
@@ -343,19 +334,6 @@ def parse_lookup_date(row, start):
     year = row[year_index].strip()
 
     return datetime.strptime(day + '-' + month + '-' + year, "%d-%b-%Y")
-
-
-def list_files(dir, suffix, sorted=False):
-    """List all files under a given directory with a given suffix, recursively.
-
-    Returns: a list of strings, optionally sorted.
-    """
-
-    ret = [str(f) for f in Path(dir).rglob(
-        '*' + suffix) if os.path.isfile(f)]
-    if sorted:
-        ret.sort()
-    return ret
 
 
 ##
