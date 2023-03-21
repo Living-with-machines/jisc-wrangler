@@ -1,11 +1,13 @@
 import xml.etree.ElementTree as ET
-from jisc_wrangler.jisc_alto2txt_wrangler import *
+
 import pytest
+
+from jisc_wrangler import constants
+from jisc_wrangler.jisc_alto2txt_wrangler import *
 
 
 @pytest.fixture
 def xml_tree():
-
     xml_string = """<?xml version="1.0"?>
         <lwm>
             <process>
@@ -41,7 +43,6 @@ def xml_tree():
 
 @pytest.fixture
 def nonstandard_xml_tree():
-
     xml_string = """<?xml version="1.0"?>
         <lwm>
         <process>
@@ -74,28 +75,35 @@ def nonstandard_xml_tree():
 
 
 def test_replace_publication_id(xml_tree):
-
     # Initially the publication id is "RDNP"
-    assert xml_tree.find(publication_element_name).attrib[
-        publication_id_attribute_name] == "RDNP"
+    assert (
+        xml_tree.find(constants.PUPBLICATION_ELEMENT_NAME).attrib[
+            constants.PUBLICATION_ID_ATTRIBUTE_NAME
+        ]
+        == "RDNP"
+    )
 
     lookup = read_title_code_lookup_file()
     result = replace_publication_id(xml_tree, lookup)
 
     # After replacement the publication id in the XML tree is "0000095"
-    assert len(xml_tree.findall(publication_element_name)) == 1
-    assert xml_tree.find(publication_element_name).attrib[
-        publication_id_attribute_name] == "0000095"
+    assert len(xml_tree.findall(constants.PUPBLICATION_ELEMENT_NAME)) == 1
+    assert (
+        xml_tree.find(constants.PUPBLICATION_ELEMENT_NAME).attrib[
+            constants.PUBLICATION_ID_ATTRIBUTE_NAME
+        ]
+        == "0000095"
+    )
 
     # The return value is the publication id:
     assert result == ("RDNP", "0000095")
 
 
 def test_standardise_title_code(nonstandard_xml_tree):
-
     # Initially the publication id is "NCBL1023"
-    title_code = nonstandard_xml_tree.find(publication_element_name).attrib[
-        publication_id_attribute_name]
+    title_code = nonstandard_xml_tree.find(constants.PUPBLICATION_ELEMENT_NAME).attrib[
+        constants.PUBLICATION_ID_ATTRIBUTE_NAME
+    ]
     assert title_code == "NCBL1023"
 
     result = standardise_title_code(title_code, nonstandard_xml_tree)
@@ -105,7 +113,6 @@ def test_standardise_title_code(nonstandard_xml_tree):
 
 
 def test_read_title_code_lookup_file():
-
     lookup = read_title_code_lookup_file()
 
     assert isinstance(lookup, dict)
@@ -123,10 +130,8 @@ def test_read_title_code_lookup_file():
     assert isinstance(lookup["ANJO"][1][0], tuple)
     assert len(lookup["ANJO"][1][0]) == 2
 
-    assert lookup["ANJO"][1][0][0] == datetime.strptime(
-        "01-Jan-1800", "%d-%b-%Y")
-    assert lookup["ANJO"][1][0][1] == datetime.strptime(
-        "23-Aug-1876", "%d-%b-%Y")
+    assert lookup["ANJO"][1][0][0] == datetime.strptime("01-Jan-1800", "%d-%b-%Y")
+    assert lookup["ANJO"][1][0][1] == datetime.strptime("23-Aug-1876", "%d-%b-%Y")
 
     # This is the NLP code.
     assert isinstance(lookup["ANJO"][1][1], str)
@@ -146,10 +151,8 @@ def test_read_title_code_lookup_file():
     assert isinstance(lookup["SNSR"][0][0], tuple)
     assert len(lookup["SNSR"][0][0]) == 2
 
-    assert lookup["SNSR"][0][0][0] == datetime.strptime(
-        "19-Jan-1840", "%d-%b-%Y")
-    assert lookup["SNSR"][0][0][1] == datetime.strptime(
-        "12-Jul-1840", "%d-%b-%Y")
+    assert lookup["SNSR"][0][0][0] == datetime.strptime("19-Jan-1840", "%d-%b-%Y")
+    assert lookup["SNSR"][0][0][1] == datetime.strptime("12-Jul-1840", "%d-%b-%Y")
 
     # This is the NLP code.
     assert isinstance(lookup["SNSR"][0][1], str)
@@ -157,7 +160,6 @@ def test_read_title_code_lookup_file():
 
 
 def test_title_code_to_nlp():
-
     lookup = read_title_code_lookup_file()
 
     title_code = "ANJO"
