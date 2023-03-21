@@ -5,6 +5,7 @@ A command line tool for restructuring mangled & duplicated
 JISC newspaper XML files.
 """
 import os
+from typing import Union
 from sys import exit
 import logging
 import argparse
@@ -38,12 +39,15 @@ def main():
         exit()
 
 
-def process_inputs(args):
-    """
-    Process all of the files under the input directory.
+def process_inputs(args: argparse.Namespace) -> None:
+    """Process all of the files under the input directory.
 
     Args:
-        args    (Namespace): Namespace object containing runtime parameters.
+        args (argparse.Namespace): Runtime parameters.
+
+    Raises:
+        RuntimeError: If the sub matches == 0.
+        RuntimeError: If there are left over files.
     """
 
     # Look at the input file paths & extract the 'stubs'.
@@ -90,19 +94,20 @@ def process_inputs(args):
         msg = f"All stubs processed but {len(leftover_files)} leftover files."
         raise RuntimeError(msg)
 
-
-def process_stub(stub, full_paths, args):
-    """
-    Process a single file path stub.
-
+def process_stub(
+    stub: str, full_paths: list, args: argparse.Namespace
+    ) -> None:
+    """Process a single file path stub.
+    
     The 'stub' is the initial part of the path, up to & including the newspaper
     title code.
 
     Args:
-        stub             (str): A file path stub.
-        full_paths (list[str]): A list of full paths to a JISC newspaper files
-                                corresponding to the given stub.
-        args       (Namespace): Namespace object containing runtime parameters.
+        stub (str): A file stub path.
+        full_paths (list): A list of full paths to a JISC newspaper file
+        corresponding to the given stub.
+        args (argparse.Namespace): Namespace object containing runtime
+        parameters.
     """
 
     logging.info(f">>> Processing stub: {stub}")
@@ -128,9 +133,10 @@ def process_stub(stub, full_paths, args):
     logging.info(f">>> Finished processing stub: {stub}")
 
 
-def process_full_path(full_path, stub_length, args):
-    """
-    Process a full path to a JISC newspaper file.
+def process_full_path(
+    full_path: str, stub_length: int, args: argparse.Namespace
+    ) -> Union[str, None]:
+    """Process a full path to a JISC newspaper file.
 
     This function implements the core wrangling & deduplification algorithm:
     - ignore non-newspaper files
@@ -148,15 +154,17 @@ def process_full_path(full_path, stub_length, args):
     how subsequent full paths should be processed via the above algorithm.
 
     Args:
-        full_path   (str): The full path to a JISC newspaper file.
+        full_path (str): The full path to a JISC newspaper file.
         stub_length (int): The number of chars in the full_path up to &
                            including the title code.
-        args  (Namespace): Namespace object containing runtime parameters.
+        args (argparse.Namespace): Namespace object containing runtime
+                            parameters.
 
     Returns:
-        str: the portion of the full path that was processed, or None if
+        str: The portion of the full path that was processed, or None if
         the full path points to a duplicate file.
     """
+    
 
     logging.debug(f"Processing full path: {full_path}")
 
@@ -180,22 +188,22 @@ def process_full_path(full_path, stub_length, args):
     return from_to[0]
 
 
-def determine_from_to(full_path, stub_length, output_dir):
-    """
-    Determine what part of the given full path can be handled in a single copy
-    operation by examining the existing output directory structure.
+def determine_from_to(
+    full_path: str, stub_length: int, output_dir: str
+    ) -> tuple:
+    """Determine what part of the given full path can be handled in a single 
+    copy operation by examining the existing output directory structure.
 
     Args:
-        full_path   (str): The full path to a JISC newspaper file.
+        full_path (str): The full path to a JISC newspaper file.
         stub_length (int): The number of chars in the full_path up to &
                            including the title code.
-        output_dir  (str): The output directory.
+        output_dir (str): The output directory.
 
     Returns:
-        str: the part of the full path that can be handled in a single copy
-        operation.
-        str: the target output subdirectory for the copy operation, or None if
-        a matching output file already exists.
+        tuple: The part of the full path that can be handled in a single copy
+               operation and the target output subdirectory for the copy
+               operation, or None if a matching output file already exists.
     """
 
     # Handle lsidvv files one at a time because their full paths do not include
@@ -262,34 +270,32 @@ def determine_from_to(full_path, stub_length, output_dir):
     # files can be handled in a copy operation.
     return None, target_file
 
-
-def process_single_file(from_to, dry_run):
-    """
-    Process a single file by copying to the appropriate output directory.
+def process_single_file(from_to: tuple, dry_run: bool) -> None:
+    """Process a single file by copying to the appropriate output directory.
 
     Args:
-        from_to (str, str): The part of the full path that can be handled in a
-                            single copy operation, and the target output
-                            subdirectory for the copy.
-        dry_run     (bool): Flag indicating whether this is a dry run.
+        from_to (tuple): The part of the full path that can be handled in a
+                         single copy operation, and the target output
+                         subdirectory for the copy.
+        dry_run (bool): Whether this is a dry run.
     """
-
     if not dry_run:
         copy(from_to[0], from_to[1])
     logging.info(f"Copied file from {from_to[0]} to {from_to[1]}")
 
 
-def process_duplicate_file(full_path, from_to, working_dir, dry_run):
-    """
-    Process a duplicate filename that already exists in the output directory.
+def process_duplicate_file(
+    full_path: str, from_to: tuple, working_dir: str, dry_run: bool
+    ) -> None:
+    """Process a duplicate file that already exists in the output directory.
 
     Args:
-        full_path    (str): The full path to a JISC newspaper file.
-        from_to (str, str): The part of the full path that can be handled in a
-                            single copy operation, and the target output
-                            subdirectory for the copy.
-        working_dir  (str): The path to the working directory.
-        dry_run     (bool): Flag indicating whether this is a dry run.
+        full_path (str): The full path to a JISC newspaper file.
+        from_to (tuple): The part of the full path that can be handled in a
+                         single copy operation, and the target output
+                         subdirectory for the copy.
+        working_dir (str): The path to the working directory.
+        dry_run (bool): Flag indicating whether this is a dry run
     """
 
     # Hash both the current file and the existing one in the output directory.
@@ -312,16 +318,15 @@ def process_duplicate_file(full_path, from_to, working_dir, dry_run):
         process_single_file(alt_from_to, dry_run)
 
 
-def process_subdir(from_to, dry_run):
-    """
-    Process a subdirectory by copying to the appropriate output directory
+def process_subdir(from_to: tuple, dry_run: bool) -> None:
+    """Process a subdirectory by copying to the appropriate output directory
     and standardise the subdirectory names.
 
     Args:
-        from_to (str, str): The part of the full path that can be handled in a
-                            single copy operation, and the target output
-                            subdirectory for the copy.
-        dry_run     (bool): Flag indicating whether this is a dry run.
+        from_to (tuple): The part of the full path that can be handled in a
+                         single copy operation, and the target output
+                         subdirectory for the copy.
+        dry_run (bool): Flag indicating whether this is a dry run.
     """
 
     # If the copy_from is a directory, make a directory with the same name
@@ -335,9 +340,8 @@ def process_subdir(from_to, dry_run):
         standardise_output_dirs(from_to[1])
 
 
-def standardise_output_dirs(output_subdir):
-    """
-    Standardise the directory structure under an output subdirectory.
+def standardise_output_dirs(output_subdir: str) -> None:
+    """Standardise the directory structure under an output subdirectory.
 
     Args:
         output_subdir (str): The output subdirectory to be standardised.
@@ -380,9 +384,8 @@ def standardise_output_dirs(output_subdir):
     logging.info(f"Standardised output directory {output_subdir}")
 
 
-def remove_last_subdir(path):
-    """
-    Removes the last subdirectory in the path on the filesystem, moving any
+def remove_last_subdir(path: str) -> None:
+    """Removes the last subdirectory in the path on the filesystem, moving any
     files contained to the parent directory.
 
     For example, if the path is '/.../output_dir/0000038/1875/12/01/service/',
@@ -406,9 +409,8 @@ def remove_last_subdir(path):
     utils.move_from_to(from_dir=path, to_dir=os.path.dirname(path))
 
 
-def remove_subday_subdir(path):
-    """
-    Removes the subdirectory within the given output path that matches the
+def remove_subday_subdir(path: str) -> None:
+    """Removes the subdirectory within the given output path that matches the
     P_SUBDAY pattern and moves its contents to the corresponding directory
     without the subday subscript. The full path is assumed to match either
     the P_SERVICE_SUBDAY or P_MASTER_SUBDAY pattern, so the subscripted
@@ -420,8 +422,9 @@ def remove_subday_subdir(path):
     Args:
         path (str): The full path to the subscripted subdirectory.
 
-    Raises: ValueError if the subscripted directory name is not found in the
-            path.
+    Raises:
+           ValueError: If the subscripted directory name is not found in the
+                       path.
     """
 
     # Remove any trailing directory separator.
@@ -440,30 +443,37 @@ def remove_subday_subdir(path):
     utils.move_from_to(from_dir=subscript_dir_path, to_dir=to_dir)
 
 
-def target_output_subdir(full_path, len_subdir, output_dir):
-    """
-    Construct the path to an output subdirectory. The subdirectory depth is
+def target_output_subdir(
+    full_path: str, len_subdir: int, output_dir: str
+    ) -> str:
+    """Construct the path to an output subdirectory. The subdirectory depth is
     determined by the len_subdir argument.
 
     Args:
-        full_path     (str): The full path to a JISC newspaper file.
-        len_subdir    (int): The number of chars in the output subdirectory
-                             path after the output directory.
-        output_dir    (str): The output directory.
-    """
+        full_path (str): The full path to a JISC newspaper file.
+        len_subdir (int): The number of chars in the output subdirectory
+                          path after the output directory.
+        output_dir (str): The output directory.
 
+    Returns:
+        str: The output directory.
+    """
     subdir = standardised_output_subdir(full_path)[:len_subdir]
     return os.path.join(output_dir, subdir)
 
 
-def standardised_output_subdir(full_path):
-    """
-    Determine the standardised output subdirectory for a given full path.
+def standardised_output_subdir(full_path: str) -> str:
+    """Determine the standardised output subdirectory for a given full path.
 
     Args:
-        full_path   (str): The full path to a JISC newspaper file.
-    """
+        full_path (str): The full path to a JISC newspaper file.
 
+    Raises:
+        RuntimeError: When no match is found.
+
+    Returns:
+        str: The standardised path.
+    """
     # Loop over the directory pattens.
     for pattern in constants.dir_patterns:
 
@@ -483,9 +493,7 @@ def standardised_output_subdir(full_path):
     msg = f"Failed to compute a standardisation for the full path: {full_path}"
     raise RuntimeError(msg)
 
-
-def extract_file_path_stubs(paths, working_dir, sorted=False):
-    """Construct a list of file path stubs for all directory patterns.
+"""Construct a list of file path stubs for all directory patterns.
 
     The 'stub' is the initial part of the path, up to & including the title
     code.
@@ -495,6 +503,25 @@ def extract_file_path_stubs(paths, working_dir, sorted=False):
 
     Raises: RuntimeError if any path is not pattern-matched to obtain the stub.
     """
+def extract_file_path_stubs(paths: str, working_dir: str, sorted: bool=False) -> list:
+    """Construct a list of file path strubs for all directory patterns.
+    
+    The 'stub' is the initial part of the path, up to & including the title
+    code.
+
+    Args:
+        paths (str): The paths to directorys containig stubs.
+        working_dir (str): The working directory.
+        sorted (bool, optional): Whether the retuned stubs should be sorted.
+                                 Defaults to False.
+
+    Raises:
+        RuntimeError: The lengths of stubs and paths do not match.
+
+    Returns:
+        list: stubs.
+    """
+    
 
     stubs = utils.flatten([extract_pattern_stubs(p, paths) for p in constants.dir_patterns])
 
@@ -511,14 +538,18 @@ def extract_file_path_stubs(paths, working_dir, sorted=False):
         stubs.sort()
     return stubs
 
-
-def extract_pattern_stubs(pattern, paths):
+def extract_pattern_stubs(pattern: str, paths: list) -> list:
     """Construct a list of file path stubs for a given directory pattern.
 
     The 'stub' is the initial part of the path, up to & including the title
     code.
 
-    Returns: a list of strings, one stub for each of the given paths.
+    Args:
+        pattern (str): The pattern to search for.
+        paths (list): A list of paths to search.
+
+    Returns:
+        list: stubs for each of the given paths.
     """
 
     if pattern == constants.lsidyv_pattern:
@@ -536,8 +567,13 @@ def extract_pattern_stubs(pattern, paths):
     return ret
 
 
-def fix_anomalous_title_codes(paths, working_dir):
-    """Correct the anomalous title codes in list and on disk."""
+def fix_anomalous_title_codes(paths: list, working_dir: str) -> None:
+    """Correct the anomalous title codes in list and on disk.
+
+    Args:
+        paths (list): A list of paths to search.
+        working_dir (str): The working directory.
+    """
 
     # TODO: replace this with enumerate.
     count = 0
@@ -561,7 +597,19 @@ def fix_anomalous_title_codes(paths, working_dir):
     logging.info(f"Fixed {count} anomalous paths.")
 
 
-def fix_title_code_anomaly(path, working_dir):
+def fix_title_code_anomaly(path: list, working_dir: str) -> str:
+    """Fix anomaly in title code.
+
+    Args:
+        paths (list): A list of paths to search.
+        working_dir (str): The working directory.
+
+    Raises:
+        ValueError: When an anamalous title code is found.
+
+    Returns:
+        str: Corrected path.
+    """
 
     m = constants.lsidyv_anomaly_pattern.search(path)
     if not m:
@@ -570,13 +618,13 @@ def fix_title_code_anomaly(path, working_dir):
     return os.path.join(working_dir, path[m.start():m.end()-2] + path[m.end()-1:])
 
 
-def validate(num_existing_output_files, args):
+def validate(num_existing_output_files: int, args: argparse.Namespace) -> None:
     """Validate the processing by comparing the number of input & output files.
 
     Args:
         num_existing_output_files (int): Number of output files that existed
-                                         before processing began.
-        args    (Namespace): Namespace object containing runtime parameters.
+                                        before processing began.
+        args    (argparse.Namespace): Runtime parameters.
     """
 
     # Check all of the input files were processed. Every input file should be
@@ -616,10 +664,10 @@ def validate(num_existing_output_files, args):
 # Setup:
 ##
 
-def parse_args():
-    """Parse arguments from the command line
+def parse_args() -> argparse.Namespace:
+    """Parse arguments from the command line.
 
-    Returns: a Namespace object containing parsed command line arguments.
+    Returns:  argsparse.Namespace: Parsed command line arguments.
     """
     parser = argparse.ArgumentParser(
         description="Restructure mangled & duplicated JISC newspaper XML files"
@@ -656,9 +704,11 @@ def parse_args():
 
     return parser.parse_args()
 
-def initialise(args):
-    """
-    Set up working directories and logging.
+def initialise(args: argparse.Namespace) -> None:
+    """Set up working directories and logging.
+
+    Args:
+        args (argparse.Namespace): Runtime arguments.
     """
 
     print(">>> This is JISC Wrangler <<<")
@@ -671,9 +721,14 @@ def initialise(args):
     logging.info(f"Working directory: {args.working_dir}")
 
 
-def setup_directories(args):
-    """
-    Prepare working & output directories.
+def setup_directories(args: argparse.Namespace) -> None:
+    """Prepare working & output directories.
+
+    Args:
+        args (argparse.Namespace): Runtime arguments.
+
+    Raises:
+        ValueError: When input directory does not exist.
     """
 
     # Check the input directory path exists.

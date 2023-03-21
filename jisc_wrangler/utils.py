@@ -10,15 +10,29 @@ from jisc_wrangler import constants
 import logging
 from hashlib import md5
 from shutil import move
+from datetime import datetime
 
-def flatten(nested_list):
-    """Flatten a list of lists."""
+def flatten(nested_list: list) -> list:
+    """Flatten a list of lists.
+
+    Args:
+        nested_list (list): nested list to flatten.
+
+    Returns:
+        list: The flattened list.
+    """
     return [item for sublist in nested_list for item in sublist]
 
-def list_files(dir, suffix="", sorted=False):
+def list_files(dir: str, suffix: str="", sorted: bool=False) -> list:
     """List all files under a given directory with a given suffix, recursively.
 
-    Returns: a list of strings, optionally sorted.
+    Args:
+        dir (str): Directory to check.
+        suffix (str, optional): file suffix to filter. Defaults to "".
+        sorted (bool, optional): Whether to sort the results. Defaults to False.
+
+    Returns:
+        list: Files in the target dir.
     """
     ret = [
         str(f)
@@ -31,12 +45,14 @@ def list_files(dir, suffix="", sorted=False):
         ret.sort()
     return ret
 
-def count_lines(file):
-    """
-    Count the number of lines in a file or file-like object.
+def count_lines(file: str) -> int:
+    """Count the number of lines in a file or file-like object.
 
     Args:
-        file (file or stream): The file to be counted.
+        file (str): File name.
+
+    Returns:
+        int: Line count.
     """
     if not os.path.isfile(file):
         return 0
@@ -44,8 +60,17 @@ def count_lines(file):
         ret = sum(1 for _ in f.readlines())
     return ret
 
-def count_all_files(dir, description=None):
-    """Count the total number of files under a given directory."""
+def count_all_files(dir: str, description:str=None) -> int:
+    """Count the total number of files under a given directory.
+
+    Args:
+        dir (str): Direcrtory to check.
+        description (_type_, optional): Description of dir. Defaults to None.
+
+    Returns:
+        int: File count.
+    """
+    
 
     ret = len(list_files(dir))
     if description:
@@ -53,9 +78,15 @@ def count_all_files(dir, description=None):
     return ret
 
 
-def count_matches_in_list(prefix, str_list):
-    """
-    Count how many strings, at the start of a list, begin with a given prefix.
+def count_matches_in_list(prefix: str, str_list: list) -> int:
+    """Count how many strings, at the start of a list, begin with a given prefix.
+
+    Args:
+        prefix (str): Prefix to check.
+        str_list (list): List of strings to check.
+
+    Returns:
+        int: String with prefix count.
     """
 
     if len(str_list) == 0:
@@ -68,8 +99,17 @@ def count_matches_in_list(prefix, str_list):
     return i
 
 
-def remove_duplicates(strs, sorted=False):
-    """Remove duplicates from a list."""
+def remove_duplicates(strs: list, sorted=False) -> list:
+    """Remove duplicates from a list.
+
+    Args:
+        strs (list): List of strings.
+        sorted (bool, optional): Whether to sort the unique strings.
+                                 Defaults to False.
+
+    Returns:
+        list: _description_
+    """
 
     unique_strs = list(set(strs))
 
@@ -78,16 +118,17 @@ def remove_duplicates(strs, sorted=False):
     return unique_strs
 
 
-def hash_file(path, blocksize=65536):
+def hash_file(path: str, blocksize: int=65536) -> str:
     """Calculate the MD5 hash of a given file
-    Arguments
-    ---------
-        path {str, os.path}: Path to the file to be hashed.
-        blocksize {int}: Memory size to read in the file (default: 65536)
-    Returns
-    -------
-        hash {str}: The HEX digest hash of the given file
+
+    Args:
+        path (str): Path to the file to be hashed.
+        blocksize (int, optional): Memory size to read in the file. Defaults to 65536.
+
+    Returns:
+        str: The HEX digest hash of the given file
     """
+    
     # Instatiate the hashlib module with md5
     hasher = md5()
 
@@ -104,40 +145,38 @@ def hash_file(path, blocksize=65536):
     return hasher.hexdigest()
 
 
-def alt_output_file(file_path):
-    """Get an alternative output file path.
+def alt_output_file(file_path: str) -> str:
+    """Get alternative file output.
 
     Args:
-        file_path (str): The standard output file path
+        file_path (str): path to file.
 
     Returns:
-        The alternative output file path (string).
+        str: The alternative output file path.
     """
     file_path, extension = os.path.splitext(file_path)
     return file_path + constants.alt_filename_suffix + extension
 
 
-def list_all_subdirs(dir):
-    """
-    Get a list of all subdirectories in a given directory, recursively.
+def list_all_subdirs(dir: str) -> list:
+    """List subdirectories in given directory.
 
     Args:
-        dir (str): The path to a directory on the filesystem.
+        dir (str): Directory to search.
 
-    Returns: a list of strings, each with a trailing directory separator.
+    Returns:
+        list: Subdirectories in dir.
     """
-
     return [os.path.join(str(d), '') for d in Path(dir).rglob('*')
             if not os.path.isfile(d)]
 
-
-def move_from_to(from_dir, to_dir):
+def move_from_to(from_dir: str, to_dir: str) -> None:
     """Move all files from one directory to another, and delete the first
     directory.
 
     Args:
-        from_dir    (str): The path to the source directory.
-        to_dir      (str): The path to the target directory.
+        from_dir (str): The path to the source directory.
+        to_dir (str): The path to the target directory.
     """
 
     # If the target directory does not already exist, create it.
@@ -152,8 +191,12 @@ def move_from_to(from_dir, to_dir):
     logging.debug(f"Removed directory: {from_dir}.")
 
 
-def write_unmatched_file(paths, working_dir):
+def write_unmatched_file(paths: list, working_dir: str) -> None:
     """Write out a list of files that do not match any of the directory patterns.
+
+    Args:
+        paths (list): Paths to check.
+        working_dir (str): Working directory.
     """
     for pattern in constants.dir_patterns:
         paths = [str for str in paths if not pattern.search(str)]
@@ -164,26 +207,51 @@ def write_unmatched_file(paths, working_dir):
     f.close()
 
 
-def ignore_file(full_path, working_dir):
+def ignore_file(full_path: str, working_dir: str) -> None:
     """Process a file that can be safely ignored.
+
+    Args:
+        full_path (str): Full path to the file.
+        working_dir (str): Working directory.
     """
     with open(os.path.join(working_dir, constants.name_ignored_file), 'a+') as f:
         f.write(f"{full_path}\n")
     f.close()
     logging.info(f"Added file {full_path} to the ignored list.")
 
-def date_in_range(start, end, date):
-    """Return date if date is in the range [start, end]
+"""Return date if date is in the range [start, end]
 
     Args:
         start (datetime): the start of the range
         end (datetime): the end of the range
         date (datetime): the date of interest
     """
+def date_in_range(start: datetime, end: datetime, date: datetime) -> bool:
+    """Check if date is in the range [start, end].
+
+    Args:
+        start (datetime): The start of the date range.
+        end (datetime): The end of the date range.
+        date (datetime): The date of interest.
+
+    Raises:
+        ValueError: If start is after end.
+
+    Returns:
+        bool: Whether the date is within range..
+    """
+    
     if start > end:
         raise ValueError(f"Invalid date interval. Start: {start}, End: {end}.")
     return start <= date <= end
 
-def parse_publicaton_date(date_str):
-    """Parse a date string"""
+def parse_publicaton_date(date_str: str) -> tuple:
+    """Parse a date string seperated by '-'.
+
+    Args:
+        date_str (str): string to extract date from.
+
+    Returns:
+        tuple: Date split on '-'.
+    """
     return tuple(date_str.split('-'))

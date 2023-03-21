@@ -9,10 +9,14 @@ import logging
 from jisc_wrangler import constants
 import pkg_resources
 import inspect
+import argparse
 
-def setup_logging(args, logfilename):
-    """
-    Prepare logging.
+def setup_logging(args: argparse.Namespace, logfilename: str) -> None:
+    """Prepare logging.
+
+    Args:
+        args (argparse.Namespace): Runtime arguments.
+        logfilename (str): Name of logfile.
     """
     calling_file_name = os.path.basename(inspect.stack()[1].filename)
     level = logging.INFO

@@ -14,6 +14,7 @@ File structure and names are unchanged (i.e. duplicated in the output), to
 ensure that paths and files quoted to in the metadata XML remain valid.
 """
 import os
+from typing import Union
 from sys import exit
 from pathlib import Path
 from shutil import copy
@@ -44,12 +45,11 @@ def main():
         exit()
 
 
-def process_inputs(args):
-    """
-    Process all of the files under the input directory.
+def process_inputs(args: argparse.Namespace) -> None:
+    """Process all of the files under the input directory.
 
     Args:
-        args    (Namespace): Namespace object containing runtime parameters.
+        args (argparse.Namespace): Runtime parameters.
     """
 
     # Read the title code lookup file.
@@ -100,7 +100,7 @@ def process_inputs(args):
                     xml_tree.write(f)
             except TypeError as e:
                 failure_count += 1
-                msg = f"TypeError thrown when writing XML ElementTree to {output_file}"
+                msg = f"TypeError when writing XML ElementTree to {output_file}"
                 logging.error(msg)
                 os.remove(output_file)
                 print(msg + ". File was removed. Continuing...")
@@ -127,11 +127,16 @@ def process_inputs(args):
 
     if failure_count > 0:
         print(
-            f"There were {failure_count} failures requiring manual intervention.")
+            f"{failure_count} failures requiring manual intervention."
+        )
 
 
-def validate(args):
+def validate(args: argparse.Namespace) -> None:
+    """Check the number of input and output files match.
 
+    Args:
+        args (argparse.Namespace): Runtime parameters
+    """
     # Compare the number of input & output metadata files.
     input_metadata_files = utils.list_files(
         args.input_dir, constants.metadata_xml_suffix
@@ -162,9 +167,8 @@ def validate(args):
     logging.info(f"Processed {len(output_plaintext_files)} plaintext files.")
 
 
-def replace_publication_id(xml_tree, lookup):
-    """
-    Replace a 4-character title code with a 7-digit NLP code in an XML tree.
+def replace_publication_id(xml_tree: str, lookup: dict) -> tuple:
+    """Replace a 4-character title code with a 7-digit NLP code in an XML tree.
 
     The XML tree structure is assumed to contain a "publication" element with
     "id" attribute, and sub-element "issue" which itself has a sub-element
@@ -218,7 +222,7 @@ def replace_publication_id(xml_tree, lookup):
     return title_code, nlp
 
 
-def standardise_title_code(title_code, xml_tree):
+def standardise_title_code(title_code: str, xml_tree: str) -> Union[str, None]:
     """Standardise a non-standard JISC title code.
 
     Handles non-standard title codes observed in the JISC source data.
@@ -235,17 +239,22 @@ def standardise_title_code(title_code, xml_tree):
     if title_code[0:4] == "NCBL" or title_code[0:5] == "BL000":
 
         # Extract the correct title code from the input subdirectory path.
-        input_sub_path_elem = xml_tree.find(constants.input_sub_path_element_name)
+        input_sub_path_elem = xml_tree.find(
+            constants.input_sub_path_element_name
+        )
         logging.info(
-            f"Extracted title code from subdirectory path: {input_sub_path_elem.text}")
+            "Extracted title code from subdirectory path: "
+            f"{input_sub_path_elem.text}"
+        )
         return input_sub_path_elem.text[0:4]
 
     return None
 
 
-def title_code_to_nlp(title_code, year, month, day, lookup):
-    """
-    Convert a 4-character title code to a 7-digit NLP code. Also supports
+def title_code_to_nlp(
+    title_code: str, year: str, month: str, day: str, lookup: dict
+    ) -> Union[str, None]:
+    """Convert a 4-character title code to a 7-digit NLP code. Also supports
     non-standard title codes if found in the lookup table.
 
     Args:
@@ -275,19 +284,20 @@ def title_code_to_nlp(title_code, year, month, day, lookup):
     return None
 
 
-def read_title_code_lookup_file():
-    """
-    Read the csv daa file for title code lookups.
+def read_title_code_lookup_file() -> dict:
+    """Read the csv daa file for title code lookups.
 
-    Returns: a dictionary keyed by title code. Values are pairs in which the
-             first element is a date range (i.e. a pair of datetime objects)
-             and the second element is the corresponding NLP code.
+   Returns: dict: A dictionary keyed by title code. Values are pairs in which 
+            the first element is a date range (i.e. a pair of datetime objects).
+            and the second element is the corresponding NLP code.
     """
 
     # Read the title code lookup file.
     rows = []
     with open(constants.title_code_lookup_file) as csvfile:
-        csvreader = csv.reader(csvfile, delimiter=constants.title_code_lookup_delimiter)
+        csvreader = csv.reader(
+            csvfile, delimiter=constants.title_code_lookup_delimiter
+        )
         for row in csvreader:
             rows.append(row)
 
@@ -308,14 +318,15 @@ def read_title_code_lookup_file():
     return(ret)
 
 
-def parse_lookup_date(row, start):
+def parse_lookup_date(row: str, start: bool) -> datetime:
     """Parse a date from a lookup table row.
 
     Args:
-        row     : a row from the lookup table
-        start   : a boolean flag
+        row (str): A rom from the lookup table.
+        start (bool): Whether to go from the start or not.
 
-    Returns: a datetime object.
+    Returns:
+        datetime: The parsed date.
     """
 
     if start:
@@ -341,8 +352,8 @@ def parse_lookup_date(row, start):
 ##
 
 
-def parse_args():
-    """Parse arguments from the command line
+def parse_args() -> argparse.Namespace:
+    """Parse arguments from the command line.
 
     Returns: a Namespace object containing parsed command line arguments.
     """
@@ -375,9 +386,11 @@ def parse_args():
     return parser.parse_args()
 
 
-def initialise(args):
-    """
-    Set up working directories and logging.
+def initialise(args: argparse.Namespace) -> None:
+    """Set up working directories and logging.
+
+    Args:
+        args (argparse.Namespace): Runtime parameters.
     """
 
     print(">>> This is JISC alto2txt Wrangler <<<")
@@ -392,9 +405,15 @@ def initialise(args):
     logging.info(f"Output directory: {args.output_dir}")
 
 
-def setup_directories(args):
-    """
-    Prepare working & output directories.
+def setup_directories(args: argparse.Namespace) -> None:
+    """Set up working directories and logging.
+
+    Args:
+        args (argparse.Namespace): Runtime parameters.
+
+    Raises:
+        ValueError: If the input directory is invalid.
+        RuntimeError: If the output directory is not empty to start with.
     """
 
     # Check the input directory path exists.
@@ -406,7 +425,12 @@ def setup_directories(args):
         Path(args.output_dir).mkdir(parents=True, exist_ok=True)
 
     # Check the output directory is empty.
-    if len([str(f) for f in Path(args.output_dir).rglob('*') if os.path.isfile(f)]) > 0:
+    outputdir = [
+        str(f)
+        for f in Path(args.output_dir).rglob('*')
+        if os.path.isfile(f)
+    ]
+    if len(outputdir) > 0:
         raise RuntimeError("Output directory must be initially empty.")
 
 
