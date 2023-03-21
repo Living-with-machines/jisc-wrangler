@@ -5,75 +5,87 @@ Constants for JISC wrangler
 """
 
 import os
-from re import compile, IGNORECASE
+import re
 
 # Regex patterns for INPUT DIRECTORIES:
 # These should be mutually exclusive and exhaustive when used
 # case-insenstively (grep -E -i). Parts in parentheses are the
 # corresponding standardised output paths.
 P_SERVICE = os.path.join(
-    '([A-Z]{4}', '[0-9]{4}', '[0-9]{2}', '[0-9]{2})(', ')service', '')
+    "([A-Z]{4}", "[0-9]{4}", "[0-9]{2}", "[0-9]{2})(", ")service", ""
+)
 P_MASTER = os.path.join(
-    '([A-Z]{4}', '[0-9]{4}', '[0-9]{2}', '[0-9]{2})(', ')master', '')
-P_SUBDAY = '_[S,V]'
-P_SERVICE_SUBDAY = os.path.join('([A-Z]{4}', '[0-9]{4}', '[0-9]{2}',
-                                '[0-9]{2})' + P_SUBDAY + '(', ')service', '')
-P_MASTER_SUBDAY = os.path.join('([A-Z]{4}', '[0-9]{4}', '[0-9]{2}',
-                               '[0-9]{2})' + P_SUBDAY + '(', ')master', '')
-P_LSIDYV = os.path.join('lsidyv[a-z0-9]{4}[a-z0-9]?[a-z0-9]?', '[A-Z]{4}-')
-P_LSIDYV_ANOMALY = os.path.join(
-    'lsidyv[a-z0-9]{4}[a-z0-9]?[a-z0-9]?', '[A-Z]{5}-')
-P_OSMAPS = os.path.join('OSMaps.*?(\\.shp|', 'metadata)\\.xml$')
+    "([A-Z]{4}", "[0-9]{4}", "[0-9]{2}", "[0-9]{2})(", ")master", ""
+)
+P_SUBDAY = "_[S,V]"
+P_SERVICE_SUBDAY = os.path.join(
+    "([A-Z]{4}", "[0-9]{4}", "[0-9]{2}", "[0-9]{2})" + P_SUBDAY + "(", ")service", ""
+)
+P_MASTER_SUBDAY = os.path.join(
+    "([A-Z]{4}", "[0-9]{4}", "[0-9]{2}", "[0-9]{2})" + P_SUBDAY + "(", ")master", ""
+)
+P_LSIDYV = os.path.join("lsidyv[a-z0-9]{4}[a-z0-9]?[a-z0-9]?", "[A-Z]{4}-")
+P_LSIDYV_ANOMALY = os.path.join("lsidyv[a-z0-9]{4}[a-z0-9]?[a-z0-9]?", "[A-Z]{5}-")
+P_OSMAPS = os.path.join("OSMaps.*?(\\.shp|", "metadata)\\.xml$")
 
-service_pattern = compile(P_SERVICE, IGNORECASE)
-service_subday_pattern = compile(P_SERVICE_SUBDAY, IGNORECASE)
-master_pattern = compile(P_MASTER, IGNORECASE)
-master_subday_pattern = compile(P_MASTER_SUBDAY, IGNORECASE)
-lsidyv_pattern = compile(P_LSIDYV)
-lsidyv_anomaly_pattern = compile(P_LSIDYV_ANOMALY)
-os_maps_pattern = compile(P_OSMAPS)
+SERVICE_PATTERN = re.compile(P_SERVICE, re.IGNORECASE)
+SERVICE_SUBDAY_PATTERN = re.compile(P_SERVICE_SUBDAY, re.IGNORECASE)
+MASTER_PATTERN = re.compile(P_MASTER, re.IGNORECASE)
+MASTER_SUBDAY_PATTERN = re.compile(P_MASTER_SUBDAY, re.IGNORECASE)
+LSIDYV_PATTERN = re.compile(P_LSIDYV)
+LISIDYV_ANOMALY_PATTERN = re.compile(P_LSIDYV_ANOMALY)
+OS_MAPS_PATTERN = re.compile(P_OSMAPS)
 
 # Do *not* include the anomalous pattern here.
-dir_patterns = [
-    service_pattern, service_subday_pattern, master_pattern,
-    master_subday_pattern, lsidyv_pattern, os_maps_pattern
+DIR_PATTERNS = [
+    SERVICE_PATTERN,
+    SERVICE_SUBDAY_PATTERN,
+    MASTER_PATTERN,
+    MASTER_SUBDAY_PATTERN,
+    LSIDYV_PATTERN,
+    OS_MAPS_PATTERN,
 ]
 
+# Regex patterns for the STANDARDISED OUTPUT DIRECTORIES:
+# Note matches only end of line $.
+P_STANDARD_SUBDIR = os.path.join("[A-Z]{4}", "[0-9]{4}", "[0-9]{2}", "[0-9]{2}$")
+STANDARD_SUBDIR_PATTERN = re.compile(P_STANDARD_SUBDIR)
+
 # Working filenames
-filename_prefix = 'jw_'
-name_logfile = 'jw.log'
-name_logfile_alto2txt = 'jw_alto2txt.log'
-name_unmatched_file = filename_prefix + 'unmatched.txt'
-name_ignored_file = filename_prefix + 'ignored.txt'
-name_duplicates_file = filename_prefix + 'duplicates.txt'
-metadata_xml_suffix = '_metadata.xml'
-plaintext_extension = '.txt'
+FILENAME_PREFIX = "jw_"
+NAME_LOGFILE = "jw.log"
+NAME_LOGFILE_ALTO2TXT = "jw_alto2txt.log"
+NAME_UNMATCHED_FILE = FILENAME_PREFIX + "unmatched.txt"
+NAME_IGNORED_FILE = FILENAME_PREFIX + "ignored.txt"
+NAME_DUPLICATES_FILE = FILENAME_PREFIX + "duplicates.txt"
+METADATA_XML_SUFFIX = "_metadata.xml"
+PLAINTEXT_EXTENSION = ".txt"
 
 # Constants
-len_title_code = len('ABCD')
-len_title_code_dir = len(os.path.join('ABCD', ''))
-len_title_code_y_dir = len(os.path.join('ABCD', 'YYYY', ''))
-len_title_code_ym_dir = len(os.path.join('ABCD', 'YYYY', 'MM', ''))
-len_title_code_ymd_dir = len(os.path.join('ABCD', 'YYYY', 'MM', 'DD', ''))
-len_subday_subscript = len('_X')
-len_day = len('DD')
-publication_element_name = 'publication'
-publication_id_attribute_name = 'id'
-issue_element_name = "issue"
-date_element_name = 'date'
-input_sub_path_element_name = './/input_sub_path'
+LEN_TITLE_CODE = len("ABCD")
+LEN_TITLE_CODE_DIR = len(os.path.join("ABCD", ""))
+LEN_TITLE_CODE_Y_DIR = len(os.path.join("ABCD", "YYYY", ""))
+LEN_TITLE_CODE_YM_DIR = len(os.path.join("ABCD", "YYYY", "MM", ""))
+LEN_TITLE_CODE_YMD_DIR = len(os.path.join("ABCD", "YYYY", "MM", "DD", ""))
+LEN_SUBDAY_SUBSCRIPT = len("_X")
+LEN_DAY = len("DD")
+PUPBLICATION_ELEMENT_NAME = "publication"
+PUBLICATION_ID_ATTRIBUTE_NAME = "id"
+ISSUE_ELEMENT_NAME = "issue"
+DATE_ELEMENT_NAME = "date"
+INPUT_SUB_PATH_ELEMENT_NAME = ".//input_sub_path"
 
 # Data.
-title_code_lookup_file = "data/title_code_lookup.csv"
-title_code_lookup_delimiter = '|'
-title_index = 0
-nlp_index = 1
-start_day_index = 2
-start_month_index = 3
-start_year_index = 4
-end_day_index = 5
-end_month_index = 6
-end_year_index = 7
+TITLE_CODE_LOOKUP_FILE = "data/title_code_lookup.csv"
+TITLE_CODE_LOOKUP_DELIMITER = "|"
+TITLE_INDEX = 0
+NLP_INDEX = 1
+START_DAY_INDEX = 2
+START_MONTH_INDEX = 3
+START_YEAR_INDEX = 4
+END_DAY_INDEX = 5
+END_MONTH_INDEX = 6
+END_YEAR_INDEX = 7
 
 # Suffix used to distinguish non-duplicates with conflicting filenames.
-alt_filename_suffix = '_ALT'
+ALT_FILENAME_SUFFIX = "_ALT"

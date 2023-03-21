@@ -1,0 +1,45 @@
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+    -  id: trailing-whitespace
+    -  id: end-of-file-fixer
+    -  id: check-yaml
+    -  id: check-added-large-files
+- repo: local
+  hooks:
+    - id: black
+      name: Black
+      entry: poetry run black
+      language: system
+      types: ['python']
+    - id: isort
+      name: isort
+      entry: poetry run isort
+      language: system
+      types: ['python']
+    - id: safety
+      name: Safety
+      # Ignore pip vulnerability
+      entry: poetry run safety check --full-report
+      pass_filenames: false
+      language: system
+    - id: mypy
+      name: MyPy
+      entry: poetry run mypy --install-types --non-interactive
+      language: system
+      types: ['python']
+      exclude: ^tests
+    - id: pylint
+      name: Pylint
+      entry: poetry run pylint --rcfile=.python-lint
+      language: system
+      types: ['python']
+      exclude: ^tests
+    - id: flake8
+      name: Flake8
+      entry: poetry run flake8
+      language: system
+      types: ['python']
+      exclude: ^tests

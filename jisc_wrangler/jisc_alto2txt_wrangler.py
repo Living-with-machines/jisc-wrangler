@@ -13,21 +13,23 @@ NLP code.
 File structure and names are unchanged (i.e. duplicated in the output), to
 ensure that paths and files quoted to in the metadata XML remain valid.
 """
+import argparse
+import csv
+import logging
 import os
-from typing import Union
-from sys import exit
+import sys
+import xml.etree.ElementTree as ET
+from datetime import datetime
 from pathlib import Path
 from shutil import copy
-import logging
-import argparse
-from jisc_wrangler import constants, logutils, utils
-from datetime import datetime
-import csv
-import xml.etree.ElementTree as ET
+from typing import Dict, Union
+
 from tqdm import tqdm  # type: ignore
 
-def main():
+from jisc_wrangler import constants, logutils, utils
 
+
+def main():
     try:
         # Prepare for execution.
         args = parse_args()
@@ -39,10 +41,10 @@ def main():
         # Check that all of the input files were processed.
         validate(args)
 
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         logging.exception(str(e))
         print(f"ERROR: {str(e)}")
-        exit()
+        sys.exit()
 
 
 def process_inputs(args: argparse.Namespace) -> None:
@@ -56,31 +58,30 @@ def process_inputs(args: argparse.Namespace) -> None:
     lookup = read_title_code_lookup_file()
 
     # Get the input metadata file full paths.
-    metadata_files = utils.list_files(
-        args.input_dir, constants.metadata_xml_suffix
-    )
+    metadata_files = utils.list_files(args.input_dir, constants.METADATA_XML_SUFFIX)
 
-    logging.info(f"Found {len(metadata_files)} metadata files.")
+    logging.info("Found %s metadata files.", len(metadata_files))
 
     # Print the number of files to be processed (and a progress bar).
     print(f"Processing {len(metadata_files)} metadata files")
 
     failure_count = 0
     for file in tqdm(metadata_files):
-
-        logging.debug(f"Processing file {file}")
+        logging.debug("Processing file %s", file)
 
         # Read the metadata XML file.
         xml_tree = ET.parse(file)
 
         # Replace the 4 character title code with the 7 character NLP code
         # in the metadata XML.
-        title_code, nlp = replace_publication_id(xml_tree, lookup)
+        try:
+            title_code, nlp = replace_publication_id(xml_tree, lookup)
+        except ValueError:
+            title_code, nlp = (None, None)
 
         # If the publication code replacement failed, skip this file.
         if title_code is None or nlp is None:
-            logging.warning(
-                f"Skipping file {file} & associated plaintext file")
+            logging.warning("Skipping file %s & associated plaintext file", file)
             continue
 
         # Construct the output file path.
@@ -88,29 +89,27 @@ def process_inputs(args: argparse.Namespace) -> None:
 
         # Write the modified XML tree to the output file.
         if not args.dry_run:
-
             output_dir = os.path.dirname(output_file)
             if not os.path.isdir(output_dir):
                 Path(output_dir).mkdir(parents=True, exist_ok=True)
-                logging.info(f"Created subdirectory at {output_dir}")
+                logging.info("Created subdirectory at %s", output_dir)
 
             # xml_tree.write(output_file)
             try:
-                with open(output_file, 'wb') as f:
-                    xml_tree.write(f)
-            except TypeError as e:
+                with open(output_file, "wb") as open_f:
+                    xml_tree.write(open_f)
+            except TypeError:
                 failure_count += 1
-                msg = f"TypeError when writing XML ElementTree to {output_file}"
-                logging.error(msg)
+                msg = "TypeError when writing XML ElementTree to {output_file}"
+                logging.error(
+                    "TypeError when writing XML ElementTree to %s", output_file
+                )
                 os.remove(output_file)
                 print(msg + ". File was removed. Continuing...")
 
         # Find the corresponding plaintext file.
         plaintext_path = Path(
-            file.replace(
-                constants.metadata_xml_suffix,
-                constants.plaintext_extension
-            )
+            file.replace(constants.METADATA_XML_SUFFIX, constants.PLAINTEXT_EXTENSION)
         )
 
         if not plaintext_path.is_file():
@@ -119,16 +118,15 @@ def process_inputs(args: argparse.Namespace) -> None:
 
         # Construct the output plaintext file path.
         output_plaintext_file = str(plaintext_path).replace(
-            args.input_dir, args.output_dir, 1)
+            args.input_dir, args.output_dir, 1
+        )
 
         # Copy the plain text file to the output directory.
         if not args.dry_run:
             copy(str(plaintext_path), output_plaintext_file)
 
     if failure_count > 0:
-        print(
-            f"{failure_count} failures requiring manual intervention."
-        )
+        print(f"{failure_count} failures requiring manual intervention.")
 
 
 def validate(args: argparse.Namespace) -> None:
@@ -139,35 +137,35 @@ def validate(args: argparse.Namespace) -> None:
     """
     # Compare the number of input & output metadata files.
     input_metadata_files = utils.list_files(
-        args.input_dir, constants.metadata_xml_suffix
+        args.input_dir, constants.METADATA_XML_SUFFIX
     )
     output_metadata_files = utils.list_files(
-        args.output_dir, constants.metadata_xml_suffix
+        args.output_dir, constants.METADATA_XML_SUFFIX
     )
 
     if len(input_metadata_files) != len(output_metadata_files):
-        msg = f"unequal input & output metadata file counts."
+        msg = "unequal input & output metadata file counts."
         logging.warning(msg)
         print(f"WARNING: {msg}")
 
     # Compare the number of input & output plaintext files.
     input_plaintext_files = utils.list_files(
-        args.input_dir, constants.plaintext_extension
+        args.input_dir, constants.PLAINTEXT_EXTENSION
     )
     output_plaintext_files = utils.list_files(
-        args.output_dir, constants.plaintext_extension
+        args.output_dir, constants.PLAINTEXT_EXTENSION
     )
 
     if len(input_plaintext_files) != len(output_plaintext_files):
-        msg = f"unequal input & output plaintext file counts."
+        msg = "unequal input & output plaintext file counts."
         logging.warning(msg)
         print(f"WARNING: {msg}")
 
-    logging.info(f"Processed {len(output_metadata_files)} metadata files.")
-    logging.info(f"Processed {len(output_plaintext_files)} plaintext files.")
+    logging.info("Processed %s metadata files.", len(output_metadata_files))
+    logging.info("Processed %s plaintext files.", len(output_plaintext_files))
 
 
-def replace_publication_id(xml_tree: str, lookup: dict) -> tuple:
+def replace_publication_id(xml_tree: ET.ElementTree, lookup: dict) -> tuple:
     """Replace a 4-character title code with a 7-digit NLP code in an XML tree.
 
     The XML tree structure is assumed to contain a "publication" element with
@@ -175,61 +173,73 @@ def replace_publication_id(xml_tree: str, lookup: dict) -> tuple:
     named "date".
 
     Args:
-        xml_tree    (str): An XML ElementTree.
+        xml_tree    (ElementTree): An XML ElementTree.
         lookup     (dict): A dictionary for NLP code lookups.
 
-    Returns: a tuple of the 4-character title code & the 7-digit NLP code.
+    Raises:
+        ValueError: Failed to find issue/date element in XML tree.
+        ValueError: Failed to find issue/date element in XML tree.
+        ValueError: Failed to standardise title code.
+        ValueError: Failed to set publication element in XML tree.
+        ValueError: Failed to get NLP for title code.
+        ValueError: Failed to set publication element in XML tree.
+
+    Returns:
+        tuple: The 4-character title code & the 7-digit NLP code.
     """
 
-    pub_elem = xml_tree.find(constants.publication_element_name)
+    pub_elem = xml_tree.find(constants.PUPBLICATION_ELEMENT_NAME)
 
     if pub_elem is None:
         logging.warning("Failed to find publication element in XML tree.")
-        return None, None
+        raise ValueError("Failed to find title code attribute in XML tree.")
 
-    title_code = pub_elem.attrib[constants.publication_id_attribute_name]
+    title_code = pub_elem.attrib[constants.PUBLICATION_ID_ATTRIBUTE_NAME]
     if title_code is None:
         logging.warning("Failed to find title code attribute in XML tree.")
-        return None, None
-    if not title_code in lookup:
-        title_code = standardise_title_code(title_code, xml_tree)
-        if title_code is None:
+        raise ValueError("Failed to find title code attribute in XML tree.")
+    if title_code not in lookup:
+        standardised_title_code = standardise_title_code(title_code, xml_tree)
+        if standardised_title_code is None:
             logging.warning("Failed to standardise title code.")
-            return None, None
+            raise ValueError("Failed to standardise title code.")
+        title_code = standardised_title_code
 
-    date_str = pub_elem.find(constants.issue_element_name +
-                             "/" + constants.date_element_name).text
+    date_str = pub_elem.find(
+        constants.ISSUE_ELEMENT_NAME + "/" + constants.DATE_ELEMENT_NAME
+    )
     if date_str is None:
         logging.warning("Failed to find issue/date element in XML tree.")
-        return None, None
+        raise ValueError("Failed to find issue/date element in XML tree.")
 
-    year, month, day = utils.parse_publicaton_date(date_str)
+    year, month, day = utils.parse_publicaton_date(str(date_str.text))
 
-    nlp = title_code_to_nlp(
-        title_code, year, month, day, lookup)
+    nlp = title_code_to_nlp(title_code, year, month, day, lookup)
 
     if nlp is None:
-        logging.warning(f"Failed to get NLP for title code {title_code}")
-        return None, None
+        logging.warning("Failed to get NLP for title code %s", title_code)
+        raise ValueError("Failed to get NLP for title code.")
 
     try:
-        pub_elem.set(constants.publication_id_attribute_name, nlp)
-    except Exception as e:
-        print(f"Failed to set publication element in XML tree.")
+        pub_elem.set(constants.PUBLICATION_ID_ATTRIBUTE_NAME, nlp)
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        print("Failed to set publication element in XML tree.")
         print(f"ERROR: {str(e)}")
-        return None, None
+        raise ValueError("Failed to set publication element in XML tree.")
 
-    return title_code, nlp
+    return (title_code, nlp)
 
 
-def standardise_title_code(title_code: str, xml_tree: str) -> Union[str, None]:
+def standardise_title_code(
+    title_code: str, xml_tree: ET.ElementTree
+) -> Union[str, None]:
     """Standardise a non-standard JISC title code.
 
     Handles non-standard title codes observed in the JISC source data.
 
     Args:
         title_code  (str): A non-standard JISC title code.
-        xml_tree    (str): An XML ElementTree.
+        xml_tree    (ElementTree): An XML ElementTree.
 
     Returns: the corresponding standard title code or None if no
     standardisation is available.
@@ -237,23 +247,21 @@ def standardise_title_code(title_code: str, xml_tree: str) -> Union[str, None]:
 
     # Handle the case of title codes of the form NCBLXXXX or BL000X.
     if title_code[0:4] == "NCBL" or title_code[0:5] == "BL000":
-
         # Extract the correct title code from the input subdirectory path.
-        input_sub_path_elem = xml_tree.find(
-            constants.input_sub_path_element_name
-        )
+        xml_tree_obj = xml_tree.find(constants.INPUT_SUB_PATH_ELEMENT_NAME)
+        assert isinstance(xml_tree_obj, ET.Element)
+        input_sub_path_elem = str(xml_tree_obj.text)
         logging.info(
-            "Extracted title code from subdirectory path: "
-            f"{input_sub_path_elem.text}"
+            "Extracted title code from subdirectory path: %s", input_sub_path_elem
         )
-        return input_sub_path_elem.text[0:4]
+        return input_sub_path_elem[0:4]
 
     return None
 
 
 def title_code_to_nlp(
     title_code: str, year: str, month: str, day: str, lookup: dict
-    ) -> Union[str, None]:
+) -> Union[str, None]:
     """Convert a 4-character title code to a 7-digit NLP code. Also supports
     non-standard title codes if found in the lookup table.
 
@@ -270,59 +278,56 @@ def title_code_to_nlp(
 
     code_lookup = lookup.get(title_code)
     if not code_lookup:
-        logging.warning(f"Title code {title_code} not found in lookup table.")
+        logging.warning("Title code %s not found in lookup table.", title_code)
         return None
 
-    date = datetime.strptime(day + '-' + month + '-' + year, "%d-%m-%Y")
+    date = datetime.strptime(day + "-" + month + "-" + year, "%d-%m-%Y")
     for entry in code_lookup:
         date_range = entry[0]
         if utils.date_in_range(date_range[0], date_range[1], date):
             return entry[1]
 
-    logging.warning(
-        f"Date out of range for title code {title_code} in lookup table.")
+    logging.warning("Date out of range for title code %s in lookup table.", title_code)
     return None
 
 
 def read_title_code_lookup_file() -> dict:
     """Read the csv daa file for title code lookups.
 
-   Returns: dict: A dictionary keyed by title code. Values are pairs in which 
-            the first element is a date range (i.e. a pair of datetime objects).
-            and the second element is the corresponding NLP code.
+    Returns: dict: A dictionary keyed by title code. Values are pairs in which
+             the first element is a date range (i.e. a pair of datetime objects).
+             and the second element is the corresponding NLP code.
     """
 
     # Read the title code lookup file.
     rows = []
-    with open(constants.title_code_lookup_file) as csvfile:
-        csvreader = csv.reader(
-            csvfile, delimiter=constants.title_code_lookup_delimiter
-        )
+    with open(constants.TITLE_CODE_LOOKUP_FILE, encoding="utf-8") as csvfile:
+        csvreader = csv.reader(csvfile, delimiter=constants.TITLE_CODE_LOOKUP_DELIMITER)
         for row in csvreader:
             rows.append(row)
 
-    ret = dict()
+    ret = {}  # type: Dict
     # Ignore the header row.
     for row in rows[1:]:
         start = parse_lookup_date(row, start=True)
         end = parse_lookup_date(row, start=False)
         # Pad the NLP code to 7 characters.
-        nlp = row[constants.nlp_index].strip().rjust(7, '0')
-        title_code = row[constants.title_index].strip()
+        nlp = row[constants.NLP_INDEX].strip().rjust(7, "0")
+        title_code = row[constants.TITLE_INDEX].strip()
 
         element = ((start, end), nlp)
         # If the title code is not already in the dictionary, add it.
         if title_code not in ret:
-            ret[title_code] = list()
+            ret[title_code] = []
         ret[title_code].append(element)
-    return(ret)
+    return ret
 
 
-def parse_lookup_date(row: str, start: bool) -> datetime:
+def parse_lookup_date(row: list, start: bool) -> datetime:
     """Parse a date from a lookup table row.
 
     Args:
-        row (str): A rom from the lookup table.
+        row (list): A rom from the lookup table.
         start (bool): Whether to go from the start or not.
 
     Returns:
@@ -330,21 +335,21 @@ def parse_lookup_date(row: str, start: bool) -> datetime:
     """
 
     if start:
-        day_index = constants.start_day_index
-        month_index = constants.start_month_index
-        year_index = constants.start_year_index
+        day_index = constants.START_DAY_INDEX
+        month_index = constants.START_MONTH_INDEX
+        year_index = constants.START_YEAR_INDEX
     else:
-        day_index = constants.end_day_index
-        month_index = constants.end_month_index
-        year_index = constants.end_year_index
+        day_index = constants.END_DAY_INDEX
+        month_index = constants.END_MONTH_INDEX
+        year_index = constants.END_YEAR_INDEX
 
     # Pad the day to 2 characters.
-    day = row[day_index].strip().rjust(2, '0')
+    day = row[day_index].strip().rjust(2, "0")
     # Truncate the month to 3 characters
     month = row[month_index].strip()[0:3]
     year = row[year_index].strip()
 
-    return datetime.strptime(day + '-' + month + '-' + year, "%d-%b-%Y")
+    return datetime.strptime(day + "-" + month + "-" + year, "%d-%b-%Y")
 
 
 ##
@@ -373,13 +378,13 @@ def parse_args() -> argparse.Namespace:
 
     parser.add_argument(
         "--dry-run",
-        action='store_true',
+        action="store_true",
         help="Perform a dry run (don't copy any files)",
     )
 
     parser.add_argument(
         "--debug",
-        action='store_true',
+        action="store_true",
         help="Run in debug mode (verbose logging)",
     )
 
@@ -395,14 +400,14 @@ def initialise(args: argparse.Namespace) -> None:
 
     print(">>> This is JISC alto2txt Wrangler <<<")
 
-    logutils.setup_logging(args, constants.name_logfile_alto2txt)
+    logutils.setup_logging(args, constants.NAME_LOGFILE_ALTO2TXT)
     setup_directories(args)
 
-    args.input_dir = os.path.join(args.input_dir, '')
-    args.output_dir = os.path.join(args.output_dir, '')
+    args.input_dir = os.path.join(args.input_dir, "")
+    args.output_dir = os.path.join(args.output_dir, "")
 
-    logging.info(f"Input directory: {args.input_dir}")
-    logging.info(f"Output directory: {args.output_dir}")
+    logging.info("Input directory: %s", args.input_dir)
+    logging.info("Output directory: %s", args.output_dir)
 
 
 def setup_directories(args: argparse.Namespace) -> None:
@@ -425,11 +430,7 @@ def setup_directories(args: argparse.Namespace) -> None:
         Path(args.output_dir).mkdir(parents=True, exist_ok=True)
 
     # Check the output directory is empty.
-    outputdir = [
-        str(f)
-        for f in Path(args.output_dir).rglob('*')
-        if os.path.isfile(f)
-    ]
+    outputdir = [str(f) for f in Path(args.output_dir).rglob("*") if os.path.isfile(f)]
     if len(outputdir) > 0:
         raise RuntimeError("Output directory must be initially empty.")
 
