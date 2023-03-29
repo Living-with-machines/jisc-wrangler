@@ -4,7 +4,7 @@ from unittest.mock import create_autospec
 from pytest import raises
 
 from jisc_wrangler import constants, utils
-from jisc_wrangler.jisc_wrangler import *
+from jisc_wrangler.jisc_plain_wrangler import *
 
 from .test_constants import *
 
