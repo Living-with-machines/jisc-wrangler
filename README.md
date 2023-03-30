@@ -30,9 +30,9 @@ python jisc_plain_wrangler.py /path/to/input/dir /path/to/output/dir
 
 For a full list of runtime parameters, run `python jisc_plain_wrangler.py --help`.
 
-#### Example
+#### Walk through
 
-Say you have some XML data saved in the format: `WO1_BNWL_1874_01_01-0001-001.xml`. This represents a standard and logical way of organising newspaper XML files based on their publication dates. However, in many cases these files are stored on mangled file paths. This file, for examle, is stored at:
+Say you have some XML data saved in a file called `WO1_BNWL_1874_01_01-0001-001.xml`. This represents a standard and logical way of organising newspaper XML files based on their publication dates. However, in many cases these files are stored on mangled file paths. This file, for examle, is stored at:
 
 `'0001_Job2001-Final Delivery   12$17$2006 at 12$49 PM/0001_$$Fileserver7$disk15$Job2001-masterfiles/2001-0289/Delivery/WO1/BNWL/1874/01/01/service/WO1_BNWL_1874_01_01-0001-001.xml'`
 
@@ -54,7 +54,7 @@ Processing 1 unique title code directory...
 100%|█████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 358.21it/s]
 ```
 
-The previously empty directory `jisc-output` now has the following structure:
+The previously empty directory `jisc-output` now has the file name as the directory structure:
 
 ```
 jisc-output/
@@ -67,7 +67,7 @@ jisc-output/
 4 directories, 1 file
 ```
 
-`jisc-logs` now has this structure:
+`jisc-logs` now contains a log file and a directory contining the running logs with the date and time the command was ran:
 
 ```
 jisc-logs/
@@ -77,8 +77,13 @@ jisc-logs/
 1 directory, 1 file
 ```
 
+- `jw.log` logs every action `jisc_plain_wrangler.py` made
+- `jw_yyyy-mm-dd_hh-mm-ss` contains three possible output files:
+    - `unmathced.txt`: lists files that do not match any of the directory patterns.
+    - `ignored.txt` : lists files that are ignored by `jisc_plain_wrangler.py`.
+    - `duplicates.txt` : lists files that have already been processed and are in the output directory.
 
-
+Note: in this exaple these files are empty and so have not been created.
 
 
 
