@@ -4,19 +4,19 @@ A command line tool for restructuring data in the JISC 19th Century British Libr
 :construction: This tool is under construction :construction:
 
 
-## Prerequisites
+## :paperclip: Prerequisites
 
 - Python >= 3.8
 - [poetry](https://python-poetry.org/docs/)
 
-## Installation
+## :gear: Installation
 
 1. Clone this repo: `git clone https://github.com/Living-with-machines/jisc-wrangler.git`
 2. Navigate into the repo: `cd jisc-wrangler`
 3. Initialise a poetry shell: `poetry shell`
 4. Install dependencies: `poetry install`
 
-## Usage
+## :clipboard: Usage
 
 ### [jisc_plain_wrangler](jisc_wrangler/jisc_plain_wrangler.py)
 
