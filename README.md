@@ -102,7 +102,7 @@ jisc-logs/
 
 - `jw.log` logs every action [jisc_plain_wrangler.py](jisc_wrangler/jisc_plain_wrangler.py) made
 - `jw_yyyy-mm-dd_hh-mm-ss` contains three possible output files:
-    - `unmathced.txt`: lists files that do not match any of the directory patterns.
+    - `unmatched.txt`: lists files that do not match any of the directory patterns.
     - `ignored.txt` : lists files that are ignored by [jisc_plain_wrangler.py](jisc_wrangler/jisc_plain_wrangler.py).
     - `duplicates.txt` : lists files that have already been processed and are in the output directory.
 
