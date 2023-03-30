@@ -43,7 +43,7 @@ optional arguments:
 
 ```
 
-[jisc_plain_wrangler.py](jisc_wrangler/jisc_plain_wrangler.py) takes an input directory (`input_dir`) that contains mangled JISC data file paths, restructures it and saves the output to a new location (`output_dir`).
+[jisc_plain_wrangler.py](jisc_wrangler/jisc_plain_wrangler.py) takes an input directory (`input_dir`) that contains mangled and duplicated JISC data file paths and restructures them, writing the output to a new location (`output_dir`).
 
 ```bash
 python jisc_plain_wrangler.py /path/to/input/dir /path/to/output/dir
