@@ -18,15 +18,15 @@ A command line tool for restructuring data in the JISC 19th Century British Libr
 
 ## Usage
 
-### [jisc_wrangler_plain.py](jisc_wrangler/jisc_plain_wrangler.py)
+### [jisc_plain_wrangler](jisc_wrangler/jisc_plain_wrangler.py)
 
-[jisc_wrangler_plain.py](jisc_wrangler/jisc_plain_wrangler.py) is a command line tool for restructuring mangled and duplicated [JISC](https://www.jisc.ac.uk/full-guide/metadata) newspaper XML file paths. The tool takes an input directory (`input_dir`) that contains mangled JISC data file paths, restructures it and saves the output to a new location (`output_dir`).
+[jisc_plain_wrangler.py](jisc_wrangler/jisc_plain_wrangler.py) is a command line tool for restructuring mangled and duplicated [JISC](https://www.jisc.ac.uk/full-guide/metadata) newspaper XML file paths. The tool takes an input directory (`input_dir`) that contains mangled JISC data file paths, restructures it and saves the output to a new location (`output_dir`).
 
 ```
 python jisc_plain_wrangler.py /path/to/input/dir /path/to/output/dir
 ```
 
-[jisc_wrangler_plain.py](jisc_wrangler/jisc_plain_wrangler.py) will produce temporary files and a log file as it runs, the locations of which can be set using the `--working_dir` argument.
+[jisc_plain_wrangler.py](jisc_wrangler/jisc_plain_wrangler.py) will produce temporary files and a log file as it runs, the locations of which can be set using the `--working_dir` argument.
 
 For a full list of runtime parameters, run `python jisc_plain_wrangler.py --help`.
 
@@ -36,9 +36,9 @@ Say you have some XML data saved in a file called `WO1_BNWL_1874_01_01-0001-001.
 
 `'0001_Job2001-Final Delivery   12$17$2006 at 12$49 PM/0001_$$Fileserver7$disk15$Job2001-masterfiles/2001-0289/Delivery/WO1/BNWL/1874/01/01/service/WO1_BNWL_1874_01_01-0001-001.xml'`
 
-Aside from the white spaces and special characters, the directory structure is convoluted and unnecessary, whilst the filename is consistent and appropriatley named. [jisc_wrangler_plain.py](jisc_wrangler/jisc_plain_wrangler.py) reconstructs these paths based on the information in the file names and copies the file to this location, leaving the original structure in place.
+Aside from the white spaces and special characters, the directory structure is convoluted and unnecessary, whilst the filename is consistent and appropriatley named. [jisc_plain_wrangler.py](jisc_wrangler/jisc_plain_wrangler.py) reconstructs these paths based on the information in the file names and copies the file to this location, leaving the original structure in place.
 
-Say this file path is located in a directory called `jisc-input`, [jisc_wrangler_plain.py](jisc_wrangler/jisc_plain_wrangler.py) will find the file and save it under a new path in a specificed output directory:
+Say this file path is located in a directory called `jisc-input`, [jisc_plain_wrangler.py](jisc_wrangler/jisc_plain_wrangler.py) will find the file and save it under a new path in a specificed output directory:
 
 ```
 python jisc_plain_wrangler.py jisc-input jisc-output --working_dir jisc-logs
@@ -77,10 +77,10 @@ jisc-logs/
 1 directory, 1 file
 ```
 
-- `jw.log` logs every action [jisc_wrangler_plain.py](jisc_wrangler/jisc_plain_wrangler.py) made
+- `jw.log` logs every action [jisc_plain_wrangler.py](jisc_wrangler/jisc_plain_wrangler.py) made
 - `jw_yyyy-mm-dd_hh-mm-ss` contains three possible output files:
     - `unmathced.txt`: lists files that do not match any of the directory patterns.
-    - `ignored.txt` : lists files that are ignored by [jisc_wrangler_plain.py](jisc_wrangler/jisc_plain_wrangler.py).
+    - `ignored.txt` : lists files that are ignored by [jisc_plain_wrangler.py](jisc_wrangler/jisc_plain_wrangler.py).
     - `duplicates.txt` : lists files that have already been processed and are in the output directory.
 
 Note: in this exaple these files are empty and so have not been created.
