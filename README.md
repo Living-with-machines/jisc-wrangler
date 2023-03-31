@@ -90,7 +90,7 @@ jisc-output/
 4 directories, 1 file
 ```
 
-`jisc-logs` now contains a log file and a directory continuing the running logs with the date and time the command was ran:
+`jisc-logs` now contains a log file and a directory containing the running logs with the date and time the command was ran:
 
 ```
 jisc-logs/
@@ -134,7 +134,7 @@ optional arguments:
   --debug               Run in debug mode (verbose logging)
 ```
 
-The tool takes an input directory (`input_dir`) which contains `_metadata.xml` and `.txt` 'files outputed by `alto2txt`, modifies the title codes and saves the output to a new location (`output_dir`). As it runs, [jisc_alto2txt_wrangler.py](jisc_wrangler/jisc_alto2txt_wrangler.py) will produce temporary files and a log file, the locations of which can be set using the `--working_dir` argument.
+The tool takes an input directory (`input_dir`) which contains `_metadata.xml` and `.txt` files outputed by `alto2txt`, modifies the title codes and saves the output to a new location (`output_dir`). As it runs, [jisc_alto2txt_wrangler.py](jisc_wrangler/jisc_alto2txt_wrangler.py) will produce temporary files and a log file, the locations of which can be set using the `--working_dir` argument.
 
 
 ```bash
