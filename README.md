@@ -117,18 +117,20 @@ The resulting file structure is now fit for use with alto2txt.
 
 ```
 jisc_alto2txt_wrangler.py
-usage: jisc_alto2txt_wrangler.py [-h] [--dry-run] [--debug] input_dir output_dir
+usage: jisc_alto2txt_wrangler.py [-h] [--working_dir WORKING_DIR] [--dry-run] [--debug] input_dir output_dir
 
 Replace publication IDs in JISC alto2txt output
 
 positional arguments:
-  input_dir   Input directory containing JISC alto2txt output
-  output_dir  Output directory to which updated alto2txt output is written
+  input_dir             Input directory containing JISC alto2txt output
+  output_dir            Output directory to which updated alto2txt output is written
 
 optional arguments:
-  -h, --help  show this help message and exit
-  --dry-run   Perform a dry run (don't copy any files)
-  --debug     Run in debug mode (verbose logging)
+  -h, --help            show this help message and exit
+  --working_dir WORKING_DIR
+                        Working directory to which temporary & log files are written
+  --dry-run             Perform a dry run (don't copy any files)
+  --debug               Run in debug mode (verbose logging)
 ```
 
 The tool takes an input directory (`input_dir`) which contains `_metadata.xml` and `.txt` 'files outputed by `alto2txt`, modifies the title codes and saves the output to a new location (`output_dir`). As it runs, [jisc_alto2txt_wrangler.py](jisc_wrangler/jisc_alto2txt_wrangler.py) will produce temporary files and a log file, the locations of which can be set using the `--working_dir` argument.
@@ -154,8 +156,7 @@ The output in the terminal looks like this:
 
 ```
 >>> This is JISC alto2txt Wrangler <<<
-Logging to the working directory at:
-jisc-alto2txt-logs/jw_alto2txt.log
+Logging to the working directory at: jisc-alto2txt-logs/jw_alto2txt.log
 Processing 1 metadata files
 100%|█████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 606.90it/s]
 ```
