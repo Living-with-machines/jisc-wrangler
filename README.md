@@ -2,6 +2,7 @@
 
 :construction: This tool is under construction :construction:
 
+![tests](https://github.com/Living-with-Machines/jisc-wrangler/actions/workflows/test.yml/badge.svg)
 ![GitHub](https://img.shields.io/github/license/Living-with-Machines/alto2txt) [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 
 A command line tool for restructuring data in the JISC 19th Century British Library Newspaper collection.
