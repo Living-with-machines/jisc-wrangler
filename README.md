@@ -198,7 +198,7 @@ Copyright 2022 The Alan Turing Institute, British Library Board, Queen Mary Univ
 
 See [LICENSE](LICENSE) for more details.
 
-# Funding and Acknowledgements
+# Funding and Acknowledgements :raised_hands:
 
 This software has been developed as part of the [Living with Machines](https://livingwithmachines.ac.uk) project.
 
