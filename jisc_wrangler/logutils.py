@@ -22,7 +22,7 @@ def setup_logging(args: argparse.Namespace, logfilename: str) -> None:
     level = logging.INFO
     if args.debug:
         level = logging.DEBUG
-    log_full_path = os.path.join(os.getcwd(), logfilename)
+    log_full_path = os.path.join(args.working_dir, logfilename)
     logging.basicConfig(
         filename=log_full_path,
         filemode="w",
@@ -39,4 +39,4 @@ def setup_logging(args: argparse.Namespace, logfilename: str) -> None:
     if args.dry_run:
         logging.info("Executing a DRY RUN. No files will be copied.")
 
-    print(f"Logging to the current directory at: {log_full_path}")
+    print(f"Logging to the working directory at: {log_full_path}")
