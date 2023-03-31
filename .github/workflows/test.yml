@@ -6,11 +6,11 @@ on:
   pull_request:
     branches:
       - main
-      - jp/dev
+      - dev
   push:
     branches:
       - main
-      - jp/dev
+      - dev
 
 jobs:
   test:
