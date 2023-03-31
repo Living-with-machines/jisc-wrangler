@@ -71,8 +71,7 @@ The output in the terminal looks like this:
 
 ```
 >>> This is JISC Wrangler <<<
-Logging to the working directory at:
-/jisc-logs/jw.log
+Logging to the working directory at: /jisc-logs/jw_2023-03-31_11h-35m-11s/jw.log
 Processing 1 unique title code directory...
 100%|█████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 358.21it/s]
 ```
@@ -94,14 +93,14 @@ jisc-output/
 
 ```
 jisc-logs/
-├── jw.log
-└── jw_2023-03-30_11h-12m-10s
+└── jw_2023-03-31_11h-35m-11s
+    └── jw.log
 
 1 directory, 1 file
 ```
 
-- `jw.log` logs every action [jisc_plain_wrangler.py](jisc_wrangler/jisc_plain_wrangler.py) made
-- `jw_yyyy-mm-dd_hh-mm-ss` contains three possible output files:
+- `jw_yyyy-mm-dd_hh-mm-ss` contains 4 possible output files:
+    - `jw.log` logs every action [jisc_plain_wrangler.py](jisc_wrangler/jisc_plain_wrangler.py) made
     - `unmatched.txt`: lists files that do not match any of the directory patterns.
     - `ignored.txt` : lists files that are ignored by [jisc_plain_wrangler.py](jisc_wrangler/jisc_plain_wrangler.py).
     - `duplicates.txt` : lists files that have already been processed and are in the output directory.
