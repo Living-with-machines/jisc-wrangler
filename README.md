@@ -71,8 +71,8 @@ The output in the terminal looks like this:
 
 ```
 >>> This is JISC Wrangler <<<
-Logging to the current directory at:
-%s /jisc-logs/jw.log
+Logging to the working directory at:
+/jisc-logs/jw.log
 Processing 1 unique title code directory...
 100%|█████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 358.21it/s]
 ```
@@ -108,7 +108,7 @@ jisc-logs/
 
 Note: in this example these files are empty and so have not been created.
 
- The resulting file structure is now fit for use with alto2txt. 
+The resulting file structure is now fit for use with alto2txt. 
 
 # jisc_alto2txt_wrangler
 
@@ -141,8 +141,53 @@ python jisc_alto2txt_wrangler.py /path/to/input/dir /path/to/output/dir --workin
 
 ## Example
 
-Say you ran [alto2txt](https://living-with-machines.github.io/alto2txt/#/) on the file structure you [previously created](#example-1)
+Say you ran [alto2txt](https://living-with-machines.github.io/alto2txt/#/) on the file structure created in the previous example, this would spit out 2 new files:
 
+- WO1_BNWL_1874_01_01-0001-001_metadata.xml
+- WO1_BNWL_1874_01_01-0001-001.txt
+
+Assuming these are in the directory created before (`jisc-output`) along side the copied xml file from `jisc_plain_wrangler`, we would process these files by proving this output directory as the *input directory* for `jisc_alto2txt_wrangler.py`. We need to specify a new **empty** directory to store the results in and a working directory for the log and temporary files produced (otherwise it will default to `.`). 
+
+```console
+python jisc_alto2txt_wrangler.py jisc-output jisc-alto2txt-output --working_dir jisc-alto2txt-logs
+```
+The output in the terminal looks like this:
+
+```
+>>> This is JISC alto2txt Wrangler <<<
+Logging to the working directory at:
+jisc-alto2txt-logs/jw_alto2txt.log
+Processing 1 metadata files
+100%|█████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 606.90it/s]
+```
+
+The input directory `jisc-output` remains unaltered, whilst the previously empty directory `jisc-alto2txt-output` now has the same directory structure as `jisc_plain_wrangler.py`, but with the new files in:
+
+```
+jisc-alto2txt-output/
+└── BNWL
+    └── 1874
+        └── 01
+            └── 01
+                ├── WO1_BNWL_1874_01_01-0001-001.txt
+                └── WO1_BNWL_1874_01_01-0001-001_metadata.xml
+
+4 directories, 2 files
+```
+
+The `_metadata.xml` file differs from original in that the xml version tag is removed and the publication id is replaced with a 7-digit NLP: "BNWL" -> "0000038".
+
+The `.txt` file is just copied over from `jisc-output` and is unchanged from the original.
+
+
+`jisc-alto2txt-logs` now contains a log file:
+
+```
+jisc-alto2txt-logs/
+└── jw_alto2txt.log
+
+0 directories, 1 file
+```
 
 # Copyright :copyright:
 
