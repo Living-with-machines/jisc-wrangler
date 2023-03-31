@@ -52,7 +52,7 @@ The tool takes an input directory (`input_dir`) that contains mangled and duplic
 python jisc_plain_wrangler.py /path/to/input/dir /path/to/output/dir --working_dir /path/to/working_dir
 ```
 
-## Example
+## Example  :open_book:
 
 Say you have some XML data saved in a file called `WO1_BNWL_1874_01_01-0001-001.xml`. This represents a standard and logical way of organising newspaper XML files based on their publication dates. However, in many cases such files are stored on mangled file paths. This file, for example, is stored at:
 
@@ -141,7 +141,7 @@ The tool takes an input directory (`input_dir`) which contains `_metadata.xml` a
 python jisc_alto2txt_wrangler.py /path/to/input/dir /path/to/output/dir --working_dir /path/to/working_dir
 ```
 
-## Example
+## Example  :open_book:
 
 Say you ran [alto2txt](https://living-with-machines.github.io/alto2txt/#/) on the file structure created in the previous example, this would spit out 2 new files:
 
