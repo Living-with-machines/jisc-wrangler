@@ -377,6 +377,13 @@ def parse_args() -> argparse.Namespace:
     )
 
     parser.add_argument(
+        "--working_dir",
+        type=str,
+        default=".",
+        help="Working directory to which temporary & log files are written",
+    )
+
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Perform a dry run (don't copy any files)",

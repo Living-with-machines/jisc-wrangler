@@ -4,7 +4,7 @@ from unittest.mock import create_autospec
 from pytest import raises
 
 from jisc_wrangler import constants, utils
-from jisc_wrangler.jisc_wrangler import *
+from jisc_wrangler.jisc_path_wrangler import *
 
 from .test_constants import *
 
@@ -28,7 +28,6 @@ def test_extract_pattern_stubs():
 
 
 def test_target_output_subdir():
-    # TODO: test with each type of path (i.e. matching each directory pattern)
     output_dir = "/home/output/"
 
     #
