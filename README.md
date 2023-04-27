@@ -1,7 +1,5 @@
 # jisc-wrangler
 
-:construction: This tool is under construction :construction:
-
 ![tests](https://github.com/Living-with-Machines/jisc-wrangler/actions/workflows/test.yml/badge.svg)
 ![GitHub](https://img.shields.io/github/license/Living-with-Machines/alto2txt) [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 
@@ -12,7 +10,7 @@ A command line tool for restructuring data in the JISC 19th Century British Libr
 - Python >= 3.8
 - [poetry](https://python-poetry.org/docs/)
 
-To use **jisc_alto2txt_wrangler** you will need to have used [alto2txt](https://living-with-machines.github.io/alto2txt/#/) on the files processed by **jisc_plain_wrangler**.
+To use **jisc_alto2txt_wrangler** you will need to have used [alto2txt](https://living-with-machines.github.io/alto2txt/#/) on the files processed by **jisc_path_wrangler**.
 
 #  Installation :gear:
 
@@ -21,15 +19,15 @@ To use **jisc_alto2txt_wrangler** you will need to have used [alto2txt](https://
 3. Initialise a poetry shell: `poetry shell`
 4. Install dependencies: `poetry install`
 
-# jisc_plain_wrangler
+# jisc_path_wrangler
 
-[jisc_plain_wrangler.py](jisc_wrangler/jisc_plain_wrangler.py) is command line tool that organises the file paths of JISC data files into a format that can be used by [alto2txt](https://living-with-machines.github.io/alto2txt/#/).
+[jisc_path_wrangler.py](jisc_wrangler/jisc_path_wrangler.py) is command line tool that organises the file paths of JISC data files into a format that can be used by [alto2txt](https://living-with-machines.github.io/alto2txt/#/).
 
 ## Usage :clipboard:
 
 ```
-jisc_plain_wrangler.py -h
-usage: jisc_plain_wrangler.py [-h] [--working_dir WORKING_DIR] [--dry-run] [--debug] input_dir output_dir
+jisc_path_wrangler.py -h
+usage: jisc_path_wrangler.py [-h] [--working_dir WORKING_DIR] [--dry-run] [--debug] input_dir output_dir
 
 Restructure mangled & duplicated JISC newspaper XML files
 
@@ -46,26 +44,31 @@ optional arguments:
 
 ```
 
-The tool takes an input directory (`input_dir`) that contains mangled and duplicated JISC data file paths and restructures them, writing the output to a new location (`output_dir`). As it runs, [jisc_plain_wrangler.py](jisc_wrangler/jisc_plain_wrangler.py) will produce temporary files and a log file, the locations of which can be set using the `--working_dir` argument.
+The tool takes an input directory (`input_dir`) that contains mangled and duplicated JISC data file paths and restructures them, writing the output to a new location (`output_dir`). As it runs, [jisc_path_wrangler.py](jisc_wrangler/jisc_path_wrangler.py) will produce temporary files and a log file, the locations of which can be set using the `--working_dir` argument.
 
 ```bash
-python jisc_plain_wrangler.py /path/to/input/dir /path/to/output/dir --working_dir /path/to/working_dir
+python jisc_path_wrangler.py /path/to/input/dir /path/to/output/dir --working_dir /path/to/working_dir
 ```
 
 ## Example  :open_book:
 
-Say you have some XML data saved in a file called `WO1_BNWL_1874_01_01-0001-001.xml`. This represents a standard and logical way of organising newspaper XML files based on their publication dates. However, in many cases such files are stored on mangled file paths. This file, for example, is stored at:
+Consider the JISC newspaper file named `WO1_BNWL_1874_01_01-0001-001.xml`. This represents a standard and logical way of naming newspaper XML files based on the publication ID and date. In this case it refers to the issue of the Belfast News Letter published on 1st January 1874.
 
-`'0001_Job2001-Final Delivery   12$17$2006 at 12$49 PM/0001_$$Fileserver7$disk15$Job2001-masterfiles/2001-0289/Delivery/WO1/BNWL/1874/01/01/service/WO1_BNWL_1874_01_01-0001-001.xml'`
+However, in many cases such files are stored on mangled file paths. This file, for example, is stored in a deeply nested subdirectory at:
+```
+0001_Job2001-Final Delivery   12$17$2006 at 12$49 PM/
+    0001_$$Fileserver7$disk15$Job2001-masterfiles/
+        2001-0289/Delivery/WO1/BNWL/1874/01/01/service/WO1_BNWL_1874_01_01-0001-001.xml
+```
 
 Aside from the white spaces and special characters that make this path tricky to process, the directory structure is not suitable for the XML files to be processed using [alto2txt](https://living-with-machines.github.io/alto2txt/#/).
 
-[jisc_plain_wrangler.py](jisc_wrangler/jisc_plain_wrangler.py) uses the file name to reconstruct these paths to one that follows the format [expected by alto2txt](https://github.com/Living-with-machines/alto2txt/blob/main/README.md#process-types) and copies the file to this location, leaving the original structure unaltered.
+[jisc_path_wrangler.py](jisc_wrangler/jisc_path_wrangler.py) uses the file name to reconstruct these paths to one that follows the format [expected by alto2txt](https://github.com/Living-with-machines/alto2txt/blob/main/README.md#process-types) and copies the file to this location, leaving the original structure unaltered.
 
-Say this file path is located in a directory called `jisc-input`, [jisc_plain_wrangler.py](jisc_wrangler/jisc_plain_wrangler.py) will find the file and save it under a new path in a specified output directory:
+Say this file path is located in a directory called `jisc-input`, [jisc_path_wrangler.py](jisc_wrangler/jisc_path_wrangler.py) will find the file and save it under a new path in a specified output directory:
 
 ```console
-python jisc_plain_wrangler.py jisc-input jisc-output --working_dir jisc-logs
+python jisc_path_wrangler.py jisc-input jisc-output --working_dir jisc-logs
 ```
 
 The output in the terminal looks like this:
@@ -77,7 +80,8 @@ Processing 1 unique title code directory...
 100%|█████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 358.21it/s]
 ```
 
-The input directory, `jisc-input` remains unaltered, whilst the previously empty directory `jisc-output` now has the file name as the directory structure:
+The input directory remains unaltered, whilst the previously empty directory `jisc-output` now contains a subdirectory structure consisting of the publication ID followed by the year, month & day of publication:
+
 
 ```
 jisc-output/
@@ -90,7 +94,7 @@ jisc-output/
 4 directories, 1 file
 ```
 
-`jisc-logs` now contains a log file and a directory containing the running logs with the date and time the command was ran:
+`jisc-logs` now contains a log file and a directory containing the running logs with the date and time the command was executed:
 
 ```
 jisc-logs/
@@ -101,9 +105,9 @@ jisc-logs/
 ```
 
 - `jw_yyyy-mm-dd_hh-mm-ss` contains 4 possible output files:
-    - `jw.log` logs every action [jisc_plain_wrangler.py](jisc_wrangler/jisc_plain_wrangler.py) made
+    - `jw.log` logs every action [jisc_path_wrangler.py](jisc_wrangler/jisc_path_wrangler.py) made
     - `unmatched.txt`: lists files that do not match any of the directory patterns.
-    - `ignored.txt` : lists files that are ignored by [jisc_plain_wrangler.py](jisc_wrangler/jisc_plain_wrangler.py).
+    - `ignored.txt` : lists files that are ignored by [jisc_path_wrangler.py](jisc_wrangler/jisc_path_wrangler.py).
     - `duplicates.txt` : lists files that have already been processed and are in the output directory.
 
 Note: in this example these files are empty and so have not been created.
@@ -112,7 +116,7 @@ The resulting file structure is now fit for use with alto2txt.
 
 # jisc_alto2txt_wrangler
 
-[jisc_alto2txt_wrangler.py](jisc_wrangler/jisc_alto2txt_wrangler.py) is a command line tool for replacing 4-character title codes with 7-digit NLP codes in the metadata XML files generated by executing [alto2txt](https://living-with-machines.github.io/alto2txt/#/) on the files processed by `jisc_plain_wrangler.py`. 
+[jisc_alto2txt_wrangler.py](jisc_wrangler/jisc_alto2txt_wrangler.py) is a command line tool for replacing 4-character title codes with 7-digit NLP codes in the metadata XML files generated by executing [alto2txt](https://living-with-machines.github.io/alto2txt/#/) on the files processed by `jisc_path_wrangler.py`. 
 
 ## Usage :clipboard:
 
@@ -143,12 +147,12 @@ python jisc_alto2txt_wrangler.py /path/to/input/dir /path/to/output/dir --workin
 
 ## Example  :open_book:
 
-Say you ran [alto2txt](https://living-with-machines.github.io/alto2txt/#/) on the file structure created in the previous example, this would spit out 2 new files:
+Suppose you were to run [alto2txt](https://living-with-machines.github.io/alto2txt/#/) on the file structure created in the previous example. This would generate two new files:
 
 - WO1_BNWL_1874_01_01-0001-001_metadata.xml
 - WO1_BNWL_1874_01_01-0001-001.txt
 
-Assuming these are in the directory created before (`jisc-output`) along side the copied xml file from `jisc_plain_wrangler`, we would process these files by proving this output directory as the *input directory* for `jisc_alto2txt_wrangler.py`. We need to specify a new **empty** directory to store the results in and a working directory for the log and temporary files produced (otherwise it will default to `.`). 
+Assuming these are in the directory created earlier (`jisc-output`), alongside the copied XML file from `jisc_path_wrangler`, we would process these files by providing this directory as the *input directory* for `jisc_alto2txt_wrangler.py`. We need to specify a new **empty** directory to store the results in and a working directory for the log and temporary files produced (otherwise it will default to `.`):
 
 ```console
 python jisc_alto2txt_wrangler.py jisc-output jisc-alto2txt-output --working_dir jisc-alto2txt-logs
@@ -162,7 +166,7 @@ Processing 1 metadata files
 100%|█████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 606.90it/s]
 ```
 
-The input directory `jisc-output` remains unaltered, whilst the previously empty directory `jisc-alto2txt-output` now has the same directory structure as `jisc_plain_wrangler.py`, but with the new files in:
+The input directory `jisc-output` remains unaltered, whilst the previously empty directory `jisc-alto2txt-output` now has the same directory structure as `jisc_path_wrangler.py`, but with the new files in:
 
 ```
 jisc-alto2txt-output/
