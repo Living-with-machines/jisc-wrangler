@@ -21,7 +21,7 @@ To use **jisc_alto2txt_wrangler** you will need to have used [alto2txt](https://
 
 # jisc_path_wrangler
 
-[jisc_path_wrangler.py](jisc_wrangler/jisc_path_wrangler.py) is command line tool that organises the file paths of JISC data files into a format that can be used by [alto2txt](https://living-with-machines.github.io/alto2txt/#/).
+[jisc_path_wrangler.py](jisc_wrangler/jisc_path_wrangler.py) is a command line tool that organises the file paths of JISC data files into a format that can be used by [alto2txt](https://living-with-machines.github.io/alto2txt/#/).
 
 ## Usage :clipboard:
 
