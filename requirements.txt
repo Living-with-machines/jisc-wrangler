@@ -1,6 +1,0 @@
-pytest==6.1.2
-pyfakefs==4.5.1
-mypy==0.790
-mypy-extensions==0.4.3
-tqdm==4.62.3
-
