@@ -1,4 +1,0 @@
-check:
-	mypy .
-
-.PHONY: check
