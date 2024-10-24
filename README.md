@@ -1,7 +1,9 @@
 # jisc-wrangler
 
+[![Link to DOI record](https://zenodo.org/badge/DOI/10.5281/zenodo.13986538.svg)](https://doi.org/10.5281/zenodo.13986538)
 ![tests](https://github.com/Living-with-Machines/jisc-wrangler/actions/workflows/test.yml/badge.svg)
-![GitHub](https://img.shields.io/github/license/Living-with-Machines/alto2txt) [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
+![GitHub](https://img.shields.io/github/license/Living-with-Machines/alto2txt)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 
 A command line tool for restructuring data in the JISC 19th Century British Library Newspaper collection.
 
